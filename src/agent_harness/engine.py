@@ -1,57 +1,57 @@
 from langgraph.graph import END, StateGraph
 
-from agent_harness.nodes.ifo import human_approval_node, in_flight_operations_node
-from agent_harness.nodes.pfc import pre_flight_check_node
-from agent_harness.nodes.rtb import mission_debrief_node, return_to_base_node
+from agent_harness.nodes.execution import execution_node, human_approval_node
+from agent_harness.nodes.initialization import initialization_node
+from agent_harness.nodes.finalization import finalization_node, retrospective_node
 from agent_harness.persistence import get_sqlite_checkpointer
-from agent_harness.state import SMPState
+from agent_harness.state import ProtocolState
 
 
 def create_harness_graph(checkpointer=None):
     """
-    Creates and compiles the SMP harness graph.
+    Creates and compiles the agentic Protocol harness graph.
     """
-    builder = StateGraph(SMPState)
+    builder = StateGraph(ProtocolState)
 
     # Add nodes
-    builder.add_node("pfc", pre_flight_check_node)
+    builder.add_node("initialization", initialization_node)
     builder.add_node("approval", human_approval_node)
-    builder.add_node("ifo", in_flight_operations_node)
-    builder.add_node("rtb", return_to_base_node)
-    builder.add_node("debrief", mission_debrief_node)
+    builder.add_node("execution", execution_node)
+    builder.add_node("finalization", finalization_node)
+    builder.add_node("retrospective", retrospective_node)
 
     # Define workflow
-    builder.set_entry_point("pfc")
+    builder.set_entry_point("initialization")
 
-    # After PFC, if passed, go to approval. If failed, end (blocked).
-    def route_after_pfc(state: SMPState):
-        if state["pfc_passed"]:
+    # After initialization, if passed, go to approval. If failed, end (blocked).
+    def route_after_initialization(state: ProtocolState):
+        if state["initialization_passed"]:
             return "approval"
         return END
 
-    builder.add_conditional_edges("pfc", route_after_pfc)
+    builder.add_conditional_edges("initialization", route_after_initialization)
 
-    # After approval (which has an interrupt), go to IFO
-    builder.add_edge("approval", "ifo")
+    # After approval (which has an interrupt), go to execution
+    builder.add_edge("approval", "execution")
 
-    # After IFO, go to RTB
-    builder.add_edge("ifo", "rtb")
+    # After execution, go to finalization
+    builder.add_edge("execution", "finalization")
 
-    # After RTB, go to Debrief if passed
-    def route_after_rtb(state: SMPState):
-        if state["rtb_passed"]:
-            return "debrief"
+    # After finalization, go to retrospective if passed
+    def route_after_finalization(state: ProtocolState):
+        if state["finalization_passed"]:
+            return "retrospective"
         return END
 
-    builder.add_conditional_edges("rtb", route_after_rtb)
-    builder.add_edge("debrief", END)
+    builder.add_conditional_edges("finalization", route_after_finalization)
+    builder.add_edge("retrospective", END)
 
     # Compile with checkpointer and interrupt
     return builder.compile(checkpointer=checkpointer, interrupt_before=["approval"])
 
 
 def run_harness(
-    mission_id: str, description: str, thread_id: str, db_path: str = "harness_state.db"
+    process_id: str, description: str, thread_id: str, db_path: str = "harness_state.db"
 ):
     """
     Run the compiled harness graph.
@@ -60,8 +60,8 @@ def run_harness(
     graph = create_harness_graph(checkpointer)
 
     initial_state = {
-        "mission_id": mission_id,
-        "mission_description": description,
+        "process_id": process_id,
+        "process_description": description,
         "current_phase": "INIT",
         "goals": [],
         "tasks": [],
@@ -70,12 +70,12 @@ def run_harness(
         "steps_completed": [],
         "current_step_index": 0,
         "stall_count": 0,
-        "pfc_passed": False,
-        "rtb_passed": False,
+        "initialization_passed": False,
+        "finalization_passed": False,
         "blockers": [],
         "warnings": [],
         "awaiting_approval": True,
-        "approval_request": f"Approve start of mission {mission_id}",
+        "approval_request": f"Approve start of process {process_id}",
         "user_feedback": None,
         "last_updated": "",
     }
@@ -85,8 +85,8 @@ def run_harness(
     # Check if we have existing state (resume)
     state = graph.get_state(config)
     if state and state.values:
-        print(f"🔄 Resuming mission {mission_id} from {state.values['current_phase']}")
+        print(f"🔄 Resuming process {process_id} from {state.values['current_phase']}")
         return graph.invoke(None, config)
     else:
-        print(f"🚀 Starting mission {mission_id}")
+        print(f"🚀 Starting process {process_id}")
         return graph.invoke(initial_state, config)

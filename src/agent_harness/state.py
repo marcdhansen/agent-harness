@@ -2,16 +2,16 @@ import operator
 from typing import Annotated, TypedDict
 
 
-class SMPState(TypedDict):
+class ProtocolState(TypedDict):
     """
-    State definition for the SOTA SMP LangGraph harness.
+    State definition for the agentic Protocol LangGraph harness.
     Using reducers to allow append-only logic for lists.
     """
 
-    # Mission Context
-    mission_id: str
-    mission_description: str
-    current_phase: str  # PFC, IFO, RTB, DEBRIEF, COMPLETE
+    # Process Context
+    process_id: str
+    process_description: str
+    current_phase: str  # Initialization, Execution, Finalization, Retrospective, COMPLETE
 
     # Task Ledger (Magentic-One pattern)
     goals: Annotated[list[str], operator.add]
@@ -25,8 +25,8 @@ class SMPState(TypedDict):
     stall_count: int
 
     # Compliance State
-    pfc_passed: bool
-    rtb_passed: bool
+    initialization_passed: bool
+    finalization_passed: bool
     blockers: Annotated[list[str], operator.add]
     warnings: Annotated[list[str], operator.add]
 

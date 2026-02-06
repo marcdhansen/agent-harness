@@ -6,12 +6,12 @@ from agent_harness.compliance import (
     check_beads_available,
     check_planning_docs,
 )
-from agent_harness.state import SMPState
+from agent_harness.state import ProtocolState
 
 
-def pre_flight_check_node(state: SMPState) -> SMPState:
+def initialization_node(state: ProtocolState) -> ProtocolState:
     """
-    Node for performing the Pre-Flight Check (PFC).
+    Node for performing the Initialization check.
     """
     project_root = Path.cwd()
     blockers = []
@@ -34,24 +34,24 @@ def pre_flight_check_node(state: SMPState) -> SMPState:
     if not check_beads_available():
         blockers.append("Beads (bd) CLI not available")
 
-    pfc_passed = len(blockers) == 0
+    initialization_passed = len(blockers) == 0
 
     # Add step to progress
     step = {
         "index": state["current_step_index"],
-        "task_id": "PFC",
-        "action": "Run Pre-Flight Check",
-        "outcome": f"Passed: {pfc_passed}. Blockers: {len(blockers)}, Warnings: {len(warnings)}",
-        "status": "success" if pfc_passed else "failure",
+        "task_id": "Initialization",
+        "action": "Run Initialization Check",
+        "outcome": f"Passed: {initialization_passed}. Blockers: {len(blockers)}, Warnings: {len(warnings)}",
+        "status": "success" if initialization_passed else "failure",
         "timestamp": datetime.now().isoformat(),
     }
 
     return {
         **state,
-        "pfc_passed": pfc_passed,
+        "initialization_passed": initialization_passed,
         "blockers": blockers,
         "warnings": warnings,
-        "current_phase": "IFO" if pfc_passed else "BLOCKED",
+        "current_phase": "Execution" if initialization_passed else "BLOCKED",
         "steps_completed": [step],
         "current_step_index": state["current_step_index"] + 1,
         "last_updated": datetime.now().isoformat(),

@@ -1,12 +1,12 @@
-"""Agent Harness - Standard Mission Protocol for AI Agent Orchestration."""
+"""Agentic Protocol Harness - Standard Protocol for AI Agent Orchestration."""
 
 from agent_harness.engine import create_harness_graph, run_harness
 from agent_harness.inner import InnerHarness
-from agent_harness.state import SMPState
+from agent_harness.state import ProtocolState
 
 __all__ = [
     "InnerHarness",
-    "SMPState",
+    "ProtocolState",
     "create_harness_graph",
     "run_harness",
 ]

@@ -2,12 +2,12 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from agent_harness.state import SMPState
+from agent_harness.state import ProtocolState
 
 
-def return_to_base_node(state: SMPState) -> SMPState:
+def finalization_node(state: ProtocolState) -> ProtocolState:
     """
-    Node for performing the Return To Base (RTB) checks.
+    Node for performing the Finalization checks.
     """
     blockers = []
 
@@ -37,38 +37,38 @@ def return_to_base_node(state: SMPState) -> SMPState:
                 break
 
     if not reflection_found:
-        blockers.append("No recent reflection found. Invoke /reflect before RTB.")
+        blockers.append("No recent reflection found. Invoke /reflect before Finalization.")
 
-    rtb_passed = len(blockers) == 0
+    finalization_passed = len(blockers) == 0
 
     # Add step to progress
     step = {
         "index": state["current_step_index"],
-        "task_id": "RTB",
-        "action": "Run Return To Base check",
-        "outcome": f"Passed: {rtb_passed}. Blockers: {len(blockers)}",
-        "status": "success" if rtb_passed else "failure",
+        "task_id": "Finalization",
+        "action": "Run Finalization check",
+        "outcome": f"Passed: {finalization_passed}. Blockers: {len(blockers)}",
+        "status": "success" if finalization_passed else "failure",
         "timestamp": datetime.now().isoformat(),
     }
 
     return {
         **state,
-        "rtb_passed": rtb_passed,
+        "finalization_passed": finalization_passed,
         "blockers": blockers,
-        "current_phase": "DEBRIEF" if rtb_passed else "RTB_BLOCKED",
+        "current_phase": "Retrospective" if finalization_passed else "FINALIZATION_BLOCKED",
         "steps_completed": [step],
         "current_step_index": state["current_step_index"] + 1,
         "last_updated": datetime.now().isoformat(),
     }
 
 
-def mission_debrief_node(state: SMPState) -> SMPState:
+def retrospective_node(state: ProtocolState) -> ProtocolState:
     """
-    Node for generating the mission debrief and syncing to memory.
+    Node for generating the retrospective and syncing to memory.
     """
-    print(f"🎖️ Mission Debrief for {state['mission_id']}")
+    print(f"🎖️ Retrospective for {state['process_id']}")
 
-    # Placeholder for actual debrief generation logic
+    # Placeholder for actual retrospective generation logic
     # In a real system, this would call specialized agents or tools
 
     return {

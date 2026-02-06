@@ -1,15 +1,15 @@
 from datetime import datetime
 
 from agent_harness.agents.hephaestus import create_forge_graph
-from agent_harness.state import SMPState
+from agent_harness.state import ProtocolState
 
 
-def sisyphus_orchestrator(state: SMPState) -> SMPState:
+def sisyphus_orchestrator(state: ProtocolState) -> ProtocolState:
     """
     Sisyphus: Lead Orchestrator.
     Delegates work to specialists like Hephaestus.
     """
-    print(f"🏛️ Sisyphus: Orchestrating tasks for mission {state['mission_id']}")
+    print(f"🏛️ Sisyphus: Orchestrating tasks for process {state['process_id']}")
 
     # In a real system, we would iterate over state['tasks']
     # For this demo, we'll delegate one task to Hephaestus
@@ -18,7 +18,7 @@ def sisyphus_orchestrator(state: SMPState) -> SMPState:
     forge = create_forge_graph()
     agent_initial_state = {
         "task": task_desc,
-        "context": [state["mission_description"]],
+        "context": [state["process_description"]],
         "logs": [],
         "result": "",
         "status": "init",

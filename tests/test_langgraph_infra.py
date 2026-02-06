@@ -4,18 +4,18 @@ from langchain_core.runnables.config import RunnableConfig
 from langgraph.graph import END, StateGraph
 
 from agent_harness.persistence import get_sqlite_checkpointer
-from agent_harness.state import SMPState
+from agent_harness.state import ProtocolState
 
 
-def sample_node(state: SMPState) -> SMPState:
-    return {**state, "current_phase": "PFC_START"}
+def sample_node(state: ProtocolState) -> ProtocolState:
+    return {**state, "current_phase": "INIT_START"}
 
 
 def test_langgraph_infrastructure():
     # 1. Setup State
-    initial_state: SMPState = SMPState(
-        mission_id="TEST-001",
-        mission_description="Testing Infrastructure",
+    initial_state: ProtocolState = ProtocolState(
+        process_id="TEST-001",
+        process_description="Testing Infrastructure",
         current_phase="INIT",
         goals=["Verify graph works"],
         tasks=[],
@@ -24,8 +24,8 @@ def test_langgraph_infrastructure():
         steps_completed=[],
         current_step_index=0,
         stall_count=0,
-        pfc_passed=False,
-        rtb_passed=False,
+        initialization_passed=False,
+        finalization_passed=False,
         blockers=[],
         warnings=[],
         awaiting_approval=False,
@@ -35,7 +35,7 @@ def test_langgraph_infrastructure():
     )
 
     # 2. Build Graph
-    builder = StateGraph(SMPState)
+    builder = StateGraph(ProtocolState)
     builder.add_node("start", sample_node)
     builder.set_entry_point("start")
     builder.add_edge("start", END)
@@ -53,11 +53,11 @@ def test_langgraph_infrastructure():
     result = graph.invoke(initial_state, config)
 
     # 5. Verify
-    assert result["current_phase"] == "PFC_START"
+    assert result["current_phase"] == "INIT_START"
 
     # 6. Verify Persistence (Resume)
     resumed_result = graph.get_state(config)
-    assert resumed_result.values["current_phase"] == "PFC_START"
+    assert resumed_result.values["current_phase"] == "INIT_START"
 
     # Cleanup
     if os.path.exists(db_path):
