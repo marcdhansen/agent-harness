@@ -1,28 +1,31 @@
-# Task: SOP Simplification Framework Implementation
+# Task: Enhance --init check with pre-flight validation (agent-harness-kxh)
 
 ## Objective
-Implement a comprehensive SOP simplification framework that allows agents to propose streamlined approaches while maintaining quality standards.
+
+Further harden the Orchestrator by adding checks for tool versions and workspace integrity during the --init phase.
 
 ## Completion Status
-- [x] Framework design and planning
-- [x] SOP simplification template creation
-- [x] Creation and validation scripts development  
-- [x] Planning skill integration
-- [x] Orchestrator validation updates
-- [x] Retrospective enhancement
-- [x] Testing and validation
+
+- [x] Research current check implementation
+- [x] Define required tool versions and workspace integrity criteria
+- [x] Implement pre-flight validation logic in `check_protocol_compliance.py`
+- [x] Add tool version checking (e.g., bd, uv, git)
+- [x] Add workspace integrity checking (e.g., existence of .agent directory, beads db)
+- [x] Verify validation failure cases
+- [x] Update documentation
 
 ## Deliverables
-- [x] Template: `templates/simplified_sop_proposal.md`
-- [x] Scripts: `create_simplification.py`, `validate_simplification.py`
-- [x] Configuration: Added SOP simplification settings to `planning_config.yaml`
-- [x] Documentation: Updated planning skill and Orchestrator documentation
-- [x] Integration: Simplification checks in initialization and finalization
 
-~~## Approval~~
+- [x] Updated `check_protocol_compliance.py` with pre-flight validation
+- [x] Updated documentation for Initialization phase
+- [x] Test cases for pre-flight validation (`tests/test_preflight.py`)
+
+## Approval
+
+Approved
 
 ## Quality Results
-- [x] All quality gates maintained
-- [x] TDD compliance preserved
-- [x] User approval mechanisms implemented
-- [x] Risk assessment framework created
+
+- [x] TDD compliance verified
+- [x] Tool version checks functional
+- [x] Workspace integrity checks functional
