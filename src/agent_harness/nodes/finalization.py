@@ -13,9 +13,7 @@ def finalization_node(state: ProtocolState) -> ProtocolState:
 
     # 1. Git Status Check
     try:
-        status_out = subprocess.check_output(
-            ["git", "status", "--porcelain"], text=True
-        ).strip()
+        status_out = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()
         if status_out:
             blockers.append("Uncommitted changes detected in repository")
     except Exception as e:

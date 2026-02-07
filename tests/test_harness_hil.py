@@ -12,7 +12,7 @@ def test_hil_flow():
         os.remove(db_path)
 
     print("--- FIRST RUN (Should hit interrupt) ---")
-    result = run_harness(process_id, "Testing Human-in-Loop", thread_id)
+    run_harness(process_id, "Testing Human-in-Loop", thread_id)
 
     # Check if interrupted
     checkpointer = get_sqlite_checkpointer(db_path)
@@ -31,7 +31,12 @@ def test_hil_flow():
     final_result = graph.invoke(None, config)
 
     # After approval node runs, it continues to Execution and Finalization
-    assert final_result["current_phase"] in ["APPROVED", "Execution", "FINALIZATION_BLOCKED", "COMPLETE"]
+    assert final_result["current_phase"] in [
+        "APPROVED",
+        "Execution",
+        "FINALIZATION_BLOCKED",
+        "COMPLETE",
+    ]
     print("✅ Human-in-Loop and Checkpointing Verified!")
 
 

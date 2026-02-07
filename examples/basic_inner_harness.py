@@ -1,5 +1,5 @@
 """
-Example: Basic mission using inner harness for simple tasks.
+Example: Basic session using inner harness for simple tasks.
 
 This demonstrates the minimal Pi Mono-style approach with just 4 tools.
 """

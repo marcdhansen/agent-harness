@@ -1,8 +1,8 @@
 from langgraph.graph import END, StateGraph
 
 from agent_harness.nodes.execution import execution_node, human_approval_node
-from agent_harness.nodes.initialization import initialization_node
 from agent_harness.nodes.finalization import finalization_node, retrospective_node
+from agent_harness.nodes.initialization import initialization_node
 from agent_harness.persistence import get_sqlite_checkpointer
 from agent_harness.state import ProtocolState
 
