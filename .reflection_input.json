@@ -1,30 +1,34 @@
 {
-  "session_name": "Update /next and /wtu workflows for SOP compliance",
+  "session_name": "Improve /next, /wtu workflows and auto-init SOP compliance",
   "outcome": "SUCCESS",
-  "duration_hours": 0.15,
+  "duration_hours": 0.4,
   "success_metrics": {
-    "Files Changed": 2,
+    "Files Changed": 4,
     "Workflows Updated": 2,
-    "Commits Pushed": 2
+    "Skills Updated": 1,
+    "Commits Pushed": 4
   },
   "technical_learnings": [
-    "/next workflow is at ~/.gemini/antigravity/global_workflows/next.md, not in show-next-task skill",
-    "Global workflows live in ~/.gemini/antigravity/global_workflows/, not .agent/workflows/",
-    "SOP Phase I = Session Context (initialization-briefing), Phase II = Task Discovery (bd ready)"
+    "Global workflows live in ~/.gemini/antigravity/global_workflows/",
+    "GEMINI.md is injected as user rules - can add // turbo commands for auto-execution",
+    "SOP has 7 phases: Session Context, Init, Planning, Execution, Finalization, Retrospective, Clean State"
   ],
   "challenges_overcome": [
-    "Initially modified wrong file (show-next-task skill instead of next.md workflow)",
-    "Reverted unnecessary changes to keep implementation clean"
+    "Initially modified wrong file (show-next-task instead of next.md workflow)",
+    "Had to make SOP enforcement automatic rather than rely on agent memory"
   ],
   "protocol_issues": [
-    "/wtu workflow was too vague - just said 'wrap it up' without specific phase invocations"
+    "/next workflow was skipping Phase I (Session Context)",
+    "/wtu workflow was too vague without specific phase commands",
+    "SOP wasn't being followed when user didn't explicitly invoke /next"
   ],
   "process_improvements": [
-    "Both /next and /wtu workflows now explicitly reference specific scripts and compliance checks",
-    "Workflows now align with SOP phases 1-2 for /next and phases 5-7 for /wtu"
+    "/next now runs Phase I (initialization-briefing) before Phase II (bd ready)",
+    "/wtu now explicitly invokes Phases 5-7 with specific commands",
+    "GEMINI.md now auto-executes init checks at session start (// turbo)",
+    "Orchestrator SKILL.md has mandatory session start section"
   ],
   "quantitative_results": {
-    "Lines Added to /next": 16,
-    "Lines Added to /wtu": 47
+    "SOP Phases Now Auto-Covered": "1-2 via GEMINI.md auto-exec"
   }
 }
