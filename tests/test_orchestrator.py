@@ -19,6 +19,7 @@ except ImportError:
     # Let's hope it works, or we'll adjust.
     pass
 
+
 class TestOrchestratorGitStatus(unittest.TestCase):
     """Test the check_git_status function."""
 
@@ -52,7 +53,9 @@ class TestOrchestratorGitStatus(unittest.TestCase):
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = " M src/main.py\n M tests/test_core.py"
-        mock_run.value = mock_result # Wait, I used mock_run.value instead of return_value in thoughts
+        mock_run.value = (
+            mock_result  # Wait, I used mock_run.value instead of return_value in thoughts
+        )
         mock_run.return_value = mock_result
 
         passed, msg = orchestrator.check_git_status(turbo=True)
@@ -71,6 +74,7 @@ class TestOrchestratorGitStatus(unittest.TestCase):
         passed, msg = orchestrator.check_git_status(turbo=True)
         self.assertFalse(passed)
         self.assertIn("ESCALATION REQUIRED", msg)
+
 
 class TestOrchestratorInitialization(unittest.TestCase):
     """Test the initialization checking functions."""
@@ -97,6 +101,7 @@ class TestOrchestratorInitialization(unittest.TestCase):
             result = orchestrator.run_turbo_initialization()
         self.assertFalse(result)
 
+
 class TestOrchestratorExecution(unittest.TestCase):
     """Test the run_execution function."""
 
@@ -108,12 +113,12 @@ class TestOrchestratorExecution(unittest.TestCase):
         """Test successful execution phase validation."""
         mock_branch.return_value = ("feature/test", True)
         mock_beads.return_value = (True, "Issues ready: 1")
-        mock_git.return_value = (False, "Work in progress") # IFO expects changes
-        
+        mock_git.return_value = (False, "Work in progress")  # IFO expects changes
+
         # Setup Path mocks
         mock_home = MagicMock()
         mock_path.home.return_value = mock_home
-        
+
         mock_brain_dir = MagicMock()
         # Path.home() / ".gemini" / "antigravity" / "brain"
         # 1: / ".gemini" -> mock_home.__truediv__
@@ -124,16 +129,16 @@ class TestOrchestratorExecution(unittest.TestCase):
         mock_home.__truediv__.return_value = mock_h1
         mock_h1.__truediv__.return_value = mock_h2
         mock_h2.__truediv__.return_value = mock_brain_dir
-        
+
         mock_brain_dir.exists.return_value = True
-        
+
         mock_session = MagicMock()
         mock_session.is_dir.return_value = True
         mock_session.stat.return_value.st_mtime = 123456789
-        
+
         mock_brain_dir.iterdir.return_value = [mock_session]
         (mock_session / "task.md").exists.return_value = True
-        
+
         with patch("builtins.print"):
             result = orchestrator.run_execution()
         self.assertTrue(result)
@@ -144,10 +149,11 @@ class TestOrchestratorExecution(unittest.TestCase):
         """Test execution fails if on main branch."""
         mock_branch.return_value = ("main", False)
         mock_beads.return_value = (True, "Issues ready: 1")
-        
+
         with patch("builtins.print"):
             result = orchestrator.run_execution()
         self.assertFalse(result)
+
 
 class TestOrchestratorFinalization(unittest.TestCase):
     """Test the run_finalization function."""
@@ -160,7 +166,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
         mock_git.return_value = (True, "Working directory clean")
         mock_reflect.return_value = (True, "Reflection captured")
         mock_todo.return_value = (True, "All tasks completed")
-        
+
         with patch("check_protocol_compliance.check_branch_info") as mock_branch:
             mock_branch.return_value = ("feature/test", True)
             with patch("builtins.print"):
@@ -171,7 +177,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
     def test_run_finalization_blocked_by_git(self, mock_git):
         """Test finalization blocked by uncommitted changes."""
         mock_git.return_value = (False, "Uncommitted changes: M file.py")
-        
+
         with patch("builtins.print"):
             result = orchestrator.run_finalization()
         self.assertFalse(result)
@@ -182,10 +188,11 @@ class TestOrchestratorFinalization(unittest.TestCase):
         """Test finalization blocked by missing reflection."""
         mock_git.return_value = (True, "Working directory clean")
         mock_reflect.return_value = (False, "Reflection not captured")
-        
+
         with patch("builtins.print"):
             result = orchestrator.run_finalization()
         self.assertFalse(result)
+
 
 class TestOrchestratorRetrospective(unittest.TestCase):
     """Test the run_retrospective function."""
@@ -195,25 +202,30 @@ class TestOrchestratorRetrospective(unittest.TestCase):
     @patch("check_protocol_compliance.check_plan_approval")
     @patch("check_protocol_compliance.check_progress_log_exists")
     @patch("check_protocol_compliance.check_todo_completion")
-    def test_run_retrospective_success(self, mock_todo, mock_log, mock_approval, mock_debrief, mock_reflect):
+    def test_run_retrospective_success(
+        self, mock_todo, mock_log, mock_approval, mock_debrief, mock_reflect
+    ):
         """Test successful retrospective."""
         mock_reflect.return_value = (True, "Reflection captured")
         mock_debrief.return_value = (True, "Debrief generated")
-        mock_approval.return_value = (False, "Plan approval is stale") # Stale means cleared
+        mock_approval.return_value = (False, "Plan approval is stale")  # Stale means cleared
         mock_log.return_value = (True, "Log exists")
         mock_todo.return_value = (True, "Tasks complete")
-        
+
         # Mock reflector synthesis in log
         with patch("check_protocol_compliance.get_active_issue_id") as mock_id:
             mock_id.return_value = "test-id"
             with patch("check_protocol_compliance.Path.home") as mock_home:
                 mock_log_file = MagicMock()
                 mock_log_file.read_text.return_value = "## Reflector Synthesis\nSome content"
-                mock_home.return_value.__truediv__.return_value.__truediv__.return_value = mock_log_file
-                
+                mock_home.return_value.__truediv__.return_value.__truediv__.return_value = (
+                    mock_log_file
+                )
+
                 with patch("builtins.print"):
                     result = orchestrator.run_retrospective()
         self.assertTrue(result)
+
 
 class TestOrchestratorCleanState(unittest.TestCase):
     """Test the run_clean_state function."""
@@ -223,10 +235,10 @@ class TestOrchestratorCleanState(unittest.TestCase):
     @patch("subprocess.run")
     def test_run_clean_state_success(self, mock_run, mock_git, mock_branch):
         """Test successful clean state check."""
-        mock_branch.return_value = ("main", False) # On main, not feature
+        mock_branch.return_value = ("main", False)  # On main, not feature
         mock_git.return_value = (True, "Clean")
         mock_run.return_value.stdout = "Your branch is up to date"
-        
+
         with patch("builtins.print"):
             result = orchestrator.run_clean_state()
         self.assertTrue(result)
@@ -242,6 +254,7 @@ class TestOrchestratorCleanState(unittest.TestCase):
                     with patch("builtins.print"):
                         result = orchestrator.run_clean_state()
         self.assertFalse(result)
+
 
 if __name__ == "__main__":
     unittest.main()

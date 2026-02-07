@@ -16,6 +16,7 @@ try:
 except ImportError:
     orchestrator = None
 
+
 class TestPreflightValidation(unittest.TestCase):
     """Test the pre-flight validation logic."""
 
@@ -80,18 +81,21 @@ class TestPreflightValidation(unittest.TestCase):
         # Mock some files missing
         mock_git = MagicMock()
         mock_git.exists.return_value = True
-        
+
         mock_agent = MagicMock()
         mock_agent.exists.return_value = False
         mock_agent.__str__.return_value = ".agent"
-        
+
         mock_beads = MagicMock()
         mock_beads.exists.return_value = True
-        
+
         def path_side_effect(name):
-            if name == ".git": return mock_git
-            if name == ".agent": return mock_agent
-            if name == ".beads": return mock_beads
+            if name == ".git":
+                return mock_git
+            if name == ".agent":
+                return mock_agent
+            if name == ".beads":
+                return mock_beads
             return MagicMock()
 
         mock_path.side_effect = path_side_effect
@@ -100,6 +104,7 @@ class TestPreflightValidation(unittest.TestCase):
             passed, missing = orchestrator.check_workspace_integrity()
             self.assertFalse(passed)
             self.assertIn(".agent", missing)
+
 
 if __name__ == "__main__":
     unittest.main()
