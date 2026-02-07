@@ -1,0 +1,30 @@
+{
+  "session_name": "Update /next and /wtu workflows for SOP compliance",
+  "outcome": "SUCCESS",
+  "duration_hours": 0.15,
+  "success_metrics": {
+    "Files Changed": 2,
+    "Workflows Updated": 2,
+    "Commits Pushed": 2
+  },
+  "technical_learnings": [
+    "/next workflow is at ~/.gemini/antigravity/global_workflows/next.md, not in show-next-task skill",
+    "Global workflows live in ~/.gemini/antigravity/global_workflows/, not .agent/workflows/",
+    "SOP Phase I = Session Context (initialization-briefing), Phase II = Task Discovery (bd ready)"
+  ],
+  "challenges_overcome": [
+    "Initially modified wrong file (show-next-task skill instead of next.md workflow)",
+    "Reverted unnecessary changes to keep implementation clean"
+  ],
+  "protocol_issues": [
+    "/wtu workflow was too vague - just said 'wrap it up' without specific phase invocations"
+  ],
+  "process_improvements": [
+    "Both /next and /wtu workflows now explicitly reference specific scripts and compliance checks",
+    "Workflows now align with SOP phases 1-2 for /next and phases 5-7 for /wtu"
+  ],
+  "quantitative_results": {
+    "Lines Added to /next": 16,
+    "Lines Added to /wtu": 47
+  }
+}
