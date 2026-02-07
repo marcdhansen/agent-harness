@@ -64,11 +64,7 @@ def check_approval(max_hours: int = 4) -> ApprovalCheck:
     for path in task_paths:
         if path.exists():
             content = path.read_text()
-            if (
-                "## Approval" in content
-                or "👍 APPROVED" in content
-                or "[x]" in content.lower()
-            ):
+            if "## Approval" in content or "👍 APPROVED" in content or "[x]" in content.lower():
                 mtime = datetime.fromtimestamp(path.stat().st_mtime)
                 age = (datetime.now() - mtime).total_seconds() / 3600
                 return ApprovalCheck(

@@ -1,14 +1,14 @@
 [project]
 name = "agent-harness"
 version = "0.1.0"
-description = "Standard Mission Protocol (SMP) harness for AI agent orchestration"
+description = "Standard Operating Procedure (SOP) harness for AI agent orchestration"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "Marc Hansen" }
 ]
-keywords = ["agent", "orchestration", "langgraph", "smp", "harness"]
+keywords = ["agent", "orchestration", "langgraph", "sop", "harness"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

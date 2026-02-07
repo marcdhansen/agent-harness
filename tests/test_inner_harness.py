@@ -52,6 +52,7 @@ class TestInnerHarness:
 
     def test_default_tools(self):
         """Harness should have 4 default tools."""
+
         # Create a mock LLM
         class MockLLM:
             def invoke(self, messages, **kwargs):
