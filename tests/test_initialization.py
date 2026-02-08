@@ -1,4 +1,4 @@
-"""Tests for pre-flight validation in the Orchestrator."""
+"""Tests for initialization validation in the Orchestrator."""
 
 import unittest
 from unittest.mock import patch, MagicMock
@@ -17,8 +17,8 @@ except ImportError:
     orchestrator = None
 
 
-class TestPreflightValidation(unittest.TestCase):
-    """Test the pre-flight validation logic."""
+class TestInitializationValidation(unittest.TestCase):
+    """Test the initialization validation logic."""
 
     def setUp(self):
         if orchestrator is None:
