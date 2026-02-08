@@ -172,9 +172,14 @@ class TestOrchestratorFinalization(unittest.TestCase):
     @patch("check_protocol_compliance.check_code_review_status")
     @patch("check_protocol_compliance.check_pr_review_issue_created")
     @patch("check_protocol_compliance.check_todo_completion")
+<<<<<<< HEAD
     @patch("check_protocol_compliance.check_hook_integrity")
     def test_run_finalization_success(
         self, mock_hook, mock_todo, mock_pr_review, mock_code_review, mock_linked,
+=======
+    def test_run_finalization_success(
+        self, mock_todo, mock_pr_review, mock_code_review, mock_linked,
+>>>>>>> ba32989 (feat(sop): implement mandatory PR review and plan execution gate [agent-harness-8ze] [agent-harness-zwg])
         mock_reflect, mock_atomic, mock_handoff, mock_simplify, mock_branch, mock_git
     ):
         """Test successful finalization."""
