@@ -108,12 +108,16 @@ class TestOrchestratorExecution(unittest.TestCase):
     @patch("check_protocol_compliance.check_branch_info")
     @patch("check_protocol_compliance.check_beads_issue")
     @patch("check_protocol_compliance.check_git_status")
+    @patch("check_protocol_compliance.check_plan_approval")
+    @patch("check_protocol_compliance.validate_tdd_compliance")
     @patch("check_protocol_compliance.Path")
-    def test_run_execution_success(self, mock_path, mock_git, mock_beads, mock_branch):
+    def test_run_execution_success(self, mock_path, mock_tdd, mock_approval, mock_git, mock_beads, mock_branch):
         """Test successful execution phase validation."""
         mock_branch.return_value = ("feature/test", True)
         mock_beads.return_value = (True, "Issues ready: 1")
         mock_git.return_value = (False, "Work in progress")  # IFO expects changes
+        mock_approval.return_value = (True, "Plan approved")
+        mock_tdd.return_value = (True, "TDD compliance verified")
 
         # Setup Path mocks
         mock_home = MagicMock()
@@ -159,18 +163,35 @@ class TestOrchestratorFinalization(unittest.TestCase):
     """Test the run_finalization function."""
 
     @patch("check_protocol_compliance.check_git_status")
+    @patch("check_protocol_compliance.check_branch_info")
+    @patch("check_protocol_compliance.check_sop_simplification")
+    @patch("check_protocol_compliance.check_handoff_compliance")
+    @patch("check_protocol_compliance.validate_atomic_commits")
     @patch("check_protocol_compliance.check_reflection_invoked")
+    @patch("check_protocol_compliance.check_linked_repositories")
+    @patch("check_protocol_compliance.check_code_review_status")
+    @patch("check_protocol_compliance.check_pr_review_issue_created")
     @patch("check_protocol_compliance.check_todo_completion")
-    def test_run_finalization_success(self, mock_todo, mock_reflect, mock_git):
+    @patch("check_protocol_compliance.check_hook_integrity")
+    def test_run_finalization_success(
+        self, mock_hook, mock_todo, mock_pr_review, mock_code_review, mock_linked,
+        mock_reflect, mock_atomic, mock_handoff, mock_simplify, mock_branch, mock_git
+    ):
         """Test successful finalization."""
         mock_git.return_value = (True, "Working directory clean")
+        mock_branch.return_value = ("feature/test", True)
+        mock_simplify.return_value = (True, "No simplifications")
+        mock_handoff.return_value = (True, "No handoffs")
+        mock_atomic.return_value = (True, [])
         mock_reflect.return_value = (True, "Reflection captured")
+        mock_linked.return_value = (True, [])
+        mock_code_review.return_value = (True, "Code Review passed")
+        mock_pr_review.return_value = (True, "PR review issue found")
         mock_todo.return_value = (True, "All tasks completed")
+        mock_hook.return_value = (True, "Hooks intact")
 
-        with patch("check_protocol_compliance.check_branch_info") as mock_branch:
-            mock_branch.return_value = ("feature/test", True)
-            with patch("builtins.print"):
-                result = orchestrator.run_finalization()
+        with patch("builtins.print"):
+            result = orchestrator.run_finalization()
         self.assertTrue(result)
 
     @patch("check_protocol_compliance.check_git_status")
@@ -232,12 +253,14 @@ class TestOrchestratorCleanState(unittest.TestCase):
 
     @patch("check_protocol_compliance.check_branch_info")
     @patch("check_protocol_compliance.check_git_status")
+    @patch("check_protocol_compliance.Path")
     @patch("subprocess.run")
-    def test_run_clean_state_success(self, mock_run, mock_git, mock_branch):
+    def test_run_clean_state_success(self, mock_run, mock_path, mock_git, mock_branch):
         """Test successful clean state check."""
         mock_branch.return_value = ("main", False)  # On main, not feature
         mock_git.return_value = (True, "Clean")
         mock_run.return_value.stdout = "Your branch is up to date"
+        mock_path.return_value.glob.return_value = []
 
         with patch("builtins.print"):
             result = orchestrator.run_clean_state()
@@ -256,5 +279,69 @@ class TestOrchestratorCleanState(unittest.TestCase):
         self.assertFalse(result)
 
 
+class TestOrchestratorPRReview(unittest.TestCase):
+    """Test the PR review issue validation function."""
+
+    @patch("check_protocol_compliance.check_branch_info")
+    @patch("check_protocol_compliance.check_tool_available")
+    @patch("subprocess.run")
+    def test_check_pr_review_issue_exists(self, mock_run, mock_tool, mock_branch):
+        """Test PR review issue found when P0 issue with 'PR Review' exists."""
+        mock_tool.return_value = True
+        mock_branch.return_value = ("feature/test-branch", True)
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "abc-123: PR Review: test-branch"
+        mock_run.return_value = mock_result
+
+        passed, msg = orchestrator.check_pr_review_issue_created()
+        self.assertTrue(passed)
+        self.assertIn("PR review issue found", msg)
+
+    @patch("check_protocol_compliance.check_branch_info")
+    @patch("check_protocol_compliance.check_tool_available")
+    @patch("subprocess.run")
+    def test_check_pr_review_issue_missing(self, mock_run, mock_tool, mock_branch):
+        """Test failure when no P0 PR review issue exists."""
+        mock_tool.return_value = True
+        mock_branch.return_value = ("feature/new-feature", True)
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = ""  # No issues
+        mock_run.return_value = mock_result
+
+        passed, msg = orchestrator.check_pr_review_issue_created()
+        self.assertFalse(passed)
+        self.assertIn("No P0 PR review issue found", msg)
+
+    @patch("check_protocol_compliance.check_branch_info")
+    @patch("check_protocol_compliance.check_tool_available")
+    def test_check_pr_review_not_needed_on_main(self, mock_tool, mock_branch):
+        """Test PR review not required when on main branch."""
+        mock_tool.return_value = True
+        mock_branch.return_value = ("main", False)
+
+        passed, msg = orchestrator.check_pr_review_issue_created()
+        self.assertTrue(passed)
+        self.assertIn("Not on feature branch", msg)
+
+    @patch("check_protocol_compliance.check_branch_info")
+    @patch("check_protocol_compliance.check_tool_available")
+    @patch("subprocess.run")
+    def test_check_pr_review_issue_branch_match(self, mock_run, mock_tool, mock_branch):
+        """Test PR review issue found by branch name match."""
+        mock_tool.return_value = True
+        mock_branch.return_value = ("agent/agent-harness-xyz", True)
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "xyz-456: Some issue mentioning agent-harness-xyz"
+        mock_run.return_value = mock_result
+
+        passed, msg = orchestrator.check_pr_review_issue_created()
+        self.assertTrue(passed)
+        self.assertIn("branch match", msg)
+
+
 if __name__ == "__main__":
     unittest.main()
+
