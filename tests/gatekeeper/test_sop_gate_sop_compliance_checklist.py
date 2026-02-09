@@ -2,6 +2,7 @@
 Test suite for Reflection Capture SOP gate enforcement.
 # Gate: docs/SOP_COMPLIANCE_CHECKLIST.md (Lines: 101, 103)
 """
+
 import pytest
 import sys
 import time
@@ -16,6 +17,7 @@ try:
     import check_protocol_compliance as orchestrator
 except ImportError:
     orchestrator = None
+
 
 class TestGateReflection:
     """Tests for recent reflection capture."""

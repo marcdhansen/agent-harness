@@ -2,6 +2,7 @@
 Test suite for Beads Issue Requirement SOP gate enforcement.
 # Gate: docs/sop/SOP.md (Lines: 13, 149)
 """
+
 import pytest
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ try:
     import check_protocol_compliance as orchestrator
 except ImportError:
     orchestrator = None
+
 
 class TestGateBeadsIssue:
     """Tests for mandatory Beads issue presence."""

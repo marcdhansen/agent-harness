@@ -111,7 +111,9 @@ class TestOrchestratorExecution(unittest.TestCase):
     @patch("check_protocol_compliance.check_plan_approval")
     @patch("check_protocol_compliance.validate_tdd_compliance")
     @patch("check_protocol_compliance.Path")
-    def test_run_execution_success(self, mock_path, mock_tdd, mock_approval, mock_git, mock_beads, mock_branch):
+    def test_run_execution_success(
+        self, mock_path, mock_tdd, mock_approval, mock_git, mock_beads, mock_branch
+    ):
         """Test successful execution phase validation."""
         mock_branch.return_value = ("feature/test", True)
         mock_beads.return_value = (True, "Issues ready: 1")
@@ -174,8 +176,18 @@ class TestOrchestratorFinalization(unittest.TestCase):
     @patch("check_protocol_compliance.check_todo_completion")
     @patch("check_protocol_compliance.check_hook_integrity")
     def test_run_finalization_success(
-        self, mock_hook, mock_todo, mock_pr_review, mock_code_review, mock_linked,
-        mock_reflect, mock_atomic, mock_handoff, mock_simplify, mock_branch, mock_git
+        self,
+        mock_hook,
+        mock_todo,
+        mock_pr_review,
+        mock_code_review,
+        mock_linked,
+        mock_reflect,
+        mock_atomic,
+        mock_handoff,
+        mock_simplify,
+        mock_branch,
+        mock_git,
     ):
         """Test successful finalization."""
         mock_git.return_value = (True, "Working directory clean")
@@ -344,4 +356,3 @@ class TestOrchestratorPRReview(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

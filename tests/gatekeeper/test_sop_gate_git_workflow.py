@@ -2,6 +2,7 @@
 Test suite for PR Merge Compliance SOP gate enforcement.
 # Gate: docs/sop/git-workflow.md (Lines: 50, 54, 55, 56)
 """
+
 import pytest
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ try:
     import check_protocol_compliance as orchestrator
 except ImportError:
     orchestrator = None
+
 
 class TestGatePRMerge:
     """Tests for mandatory rebase-and-squash enforcement."""
@@ -32,7 +34,7 @@ class TestGatePRMerge:
             if "origin/main..HEAD" in cmd:
                 return MagicMock(returncode=0, stdout="a1b2c3d commit 1")
             return MagicMock(returncode=0, stdout="")
-            
+
         mock_run.side_effect = run_side_effect
 
         passed, errors = orchestrator.validate_atomic_commits()
@@ -50,7 +52,7 @@ class TestGatePRMerge:
             if "origin/main..HEAD" in cmd and "--merges" not in cmd:
                 return MagicMock(returncode=0, stdout="a1b2c3d commit 1\ne4f5g6h commit 2")
             return MagicMock(returncode=0, stdout="")
-            
+
         mock_run.side_effect = run_side_effect
 
         passed, errors = orchestrator.validate_atomic_commits()
@@ -70,7 +72,7 @@ class TestGatePRMerge:
             if "--pretty=%B" in cmd:
                 return MagicMock(returncode=0, stdout="feat(core): unit tests [issue-123]")
             return MagicMock(returncode=0, stdout="")
-            
+
         mock_run.side_effect = run_side_effect
 
         passed, errors = orchestrator.validate_atomic_commits()

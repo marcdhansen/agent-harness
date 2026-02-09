@@ -2,6 +2,7 @@
 Test suite for TDD Initialization Validation SOP gate enforcement.
 # Gate: docs/sop/tdd-workflow.md (Lines: 14, 23)
 """
+
 import pytest
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ try:
     import check_protocol_compliance as orchestrator
 except ImportError:
     orchestrator = None
+
 
 class TestGateTDDPresence:
     """Tests for mandatory TDD presence before implementation."""
@@ -31,12 +33,12 @@ class TestGateTDDPresence:
         mock_status = MagicMock()
         mock_status.returncode = 0
         mock_status.stdout = "A  src/new_feature.py\nM  README.md"
-        
+
         def run_side_effect(cmd, **kwargs):
             if cmd[1] == "status":
                 return mock_status
             return MagicMock(returncode=0, stdout="")
-            
+
         mock_run.side_effect = run_side_effect
 
         # Call the validation function (we assume we'll add this to check_protocol_compliance)
@@ -61,12 +63,12 @@ class TestGateTDDPresence:
         mock_status = MagicMock()
         mock_status.returncode = 0
         mock_status.stdout = "A  tests/test_new_feature.py"
-        
+
         def run_side_effect(cmd, **kwargs):
             if cmd[1] == "status":
                 return mock_status
             return MagicMock(returncode=0, stdout="")
-            
+
         mock_run.side_effect = run_side_effect
 
         if hasattr(orchestrator, "validate_tdd_compliance"):
@@ -87,12 +89,12 @@ class TestGateTDDPresence:
         mock_status = MagicMock()
         mock_status.returncode = 0
         mock_status.stdout = "M  src/new_feature.py\nA  tests/test_new_feature.py"
-        
+
         def run_side_effect(cmd, **kwargs):
             if cmd[1] == "status":
                 return mock_status
             return MagicMock(returncode=0, stdout="")
-            
+
         mock_run.side_effect = run_side_effect
 
         if hasattr(orchestrator, "validate_tdd_compliance"):

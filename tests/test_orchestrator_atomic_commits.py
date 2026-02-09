@@ -190,5 +190,6 @@ class TestAtomicCommitValidation:
         assert is_valid is False
         assert any("conventional format" in err for err in errors)
 
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -2,6 +2,7 @@
 Test suite for Plan Approval Freshness SOP gate enforcement.
 # Gate: docs/phases/02_initialization.md (Lines: 3, 103)
 """
+
 import pytest
 import sys
 import time
@@ -16,6 +17,7 @@ try:
     import check_protocol_compliance as orchestrator
 except ImportError:
     orchestrator = None
+
 
 class TestGatePlanApproval:
     """Tests for recent plan approval."""
@@ -42,20 +44,20 @@ class TestGatePlanApproval:
 
         mock_exists.return_value = True
         mock_read.return_value = "## Approval\n[x] Approved"
-        
+
         # Mock brain dir iteration
         mock_session_dir = MagicMock(spec=Path)
         mock_session_dir.is_dir.return_value = True
         mock_session_dir.__truediv__.return_value = mock_session_dir
         mock_session_dir.exists.return_value = True
         mock_session_dir.read_text.return_value = "## Approval\n[x] Approved"
-        
+
         mock_iterdir.return_value = [mock_session_dir]
 
         # Mock stat for the task.md file
         mock_st = MagicMock()
         mock_st.st_mtime = time.time() - (5 * 3600)
-        mock_st.st_mode = 33188 # Regular file
+        mock_st.st_mode = 33188  # Regular file
         mock_stat.return_value = mock_st
 
         passed, msg = orchestrator.check_plan_approval()
@@ -73,20 +75,20 @@ class TestGatePlanApproval:
 
         mock_exists.return_value = True
         mock_read.return_value = "## Approval\n[x] Approved"
-        
+
         # Mock brain dir iteration
         mock_session_dir = MagicMock(spec=Path)
         mock_session_dir.is_dir.return_value = True
         mock_session_dir.__truediv__.return_value = mock_session_dir
         mock_session_dir.exists.return_value = True
         mock_session_dir.read_text.return_value = "## Approval\n[x] Approved"
-        
+
         mock_iterdir.return_value = [mock_session_dir]
 
         # Mock stat for the task.md file
         mock_st = MagicMock()
         mock_st.st_mtime = time.time() - 1800
-        mock_st.st_mode = 33188 # Regular file
+        mock_st.st_mode = 33188  # Regular file
         mock_stat.return_value = mock_st
 
         passed, msg = orchestrator.check_plan_approval()
