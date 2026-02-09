@@ -1,54 +1,58 @@
-# 📋 Implementation Plan: agent-harness-1wj - PR Workflow + Handoff Updates
+# 📋 Implementation Plan: agent-harness-v0o - Enforce Rebase-Squash Strategy
 
 ## Objective
 
-Modify SOP to require all code changes via PRs. Update Finalization phase to create PRs, update Handoff Protocol, and enforce PR review/approval.
+Prevent SOP violations (merge commits/multi-commit PRs) by automating enforcement in the Orchestrator's Finalization phase.
 
 ## Proposed Changes
 
-### 1. SOP Documentation Updates
+### 1. Orchestrator Enhancement (`check_protocol_compliance.py`)
 
-- **`AGENTS.md`**:
-  - Mandate that all code changes Must happen on feature branches and be merged via PRs.
-  - Explicitly state that PR approval from a different agent is blocking for implementation tasks.
-- **`.agent/docs/phases/05_finalization.md`**:
-  - Add requirement to create a PR before closing the session.
-  - Provide instructions on using `gh pr create` or asking the user to create one.
-- **`.agent/docs/phases/06_retrospective.md`**:
-  - Update the Handoff section to mandate providing the PR link.
-- **`SOP_COMPLIANCE_CHECKLIST.md`**:
-  - Add checkboxes for "PR Created" in Phase 5 and "PR Link in Handoff" in Phase 6.
+- **`validate_atomic_commits()`**:
+  - Update logic to compare current branch against `main`.
+  - Count commits: `git rev-list --count main..HEAD`.
+  - If count > 1, block finalization with a clear instruction to squash.
+  - Check for merge commits: `git rev-list --merges main..HEAD`.
+  - If any merge commits found, block finalization.
+- **Improved Messaging**:
+  - Provide specific git commands for the user/agent to fix the violation (e.g., `git rebase -i main`).
 
-### 2. Orchestrator Enhancement (`check_protocol_compliance.py`)
+### 2. Testing (`tests/test_orchestrator_atomic_commits.py`)
 
-- **Initialization Check**:
-  - No changes needed (already checks for feature branch if implementing).
-- **Finalization Check (`--finalize`)**:
-  - Add a check to verify if a PR exists for the current branch using `gh pr list --head <branch>`.
-  - If no PR exists, block finalization (unless in Turbo Mode).
-- **Retrospective Check (`--retrospective`)**:
-  - Add a check to verify that the handoff message or a handoff file contains a valid GitHub PR URL.
+- Implement 5 distinct test cases:
+  1. **Success**: Single commit, no merges.
+  2. **Failure**: Multiple commits (no merges).
+  3. **Failure**: Single commit that is a merge commit.
+  4. **Failure**: Multiple commits including a merge commit.
+  5. **Success**: Rebased and squashed branch (1 commit).
+
+### 3. Browser Automation (`skills/browser-manager/`)
+
+- Review and update Playwright scripts to ensure the "Squash and merge" button is explicitly targeted by ID or label, rather than relying on default browser state.
+
+### 4. PR Template Updates
+
+- Add a mandatory checklist item in `.github/PULL_REQUEST_TEMPLATE.md`:
+  - `[ ] Branch has been squashed into a single atomic commit.`
+  - `[ ] No merge commits are present (rebase used instead).`
 
 ## Verification
 
-### Manual Verification
+### Automated
 
-1. Create a dummy test branch.
-2. Attempt to run `--finalize` without a PR; verify it blocks.
-3. Create a PR for the branch.
-4. Run `--finalize` again; verify it passes.
-5. Create a handoff without a PR link; verify `--retrospective` fails.
-6. Add PR link to handoff; verify it passes.
+- `pytest tests/test_orchestrator_atomic_commits.py`
+- `pytest tests/test_orchestrator.py` (ensure no regressions)
 
-### Automated Verification
+### Manual
 
-- Update `tests/test_orchestrator.py` to include tests for the new PR-related checks.
+- Create a branch with 2 commits and try to run `check_protocol_compliance.py --finalize`. Verify it blocks.
+- Squash the commits and verify it passes.
 
 ## Blast Radius
 
-- **Medium**: This change modifies the core development workflow for all agents. Failure in the Orchestrator check could block all progress until fixed.
-- **Dependencies**: Requires `gh` CLI to be installed and authenticated for automated PR detection.
+- **Low-Medium**: Only affects the Finalization phase. If logic is too strict or buggy, it could block PR creation.
+- **Dependencies**: Depends on `git` CLI availability.
 
 ## Rollback Plan
 
-- Revert changes to `AGENTS.md` and Orchestrator script.
+- Revert changes to `check_protocol_compliance.py`.
