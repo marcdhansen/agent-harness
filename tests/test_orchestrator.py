@@ -175,8 +175,10 @@ class TestOrchestratorFinalization(unittest.TestCase):
     @patch("check_protocol_compliance.check_pr_review_issue_created")
     @patch("check_protocol_compliance.check_todo_completion")
     @patch("check_protocol_compliance.check_hook_integrity")
+    @patch("check_protocol_compliance.check_pr_exists")
     def test_run_finalization_success(
         self,
+        mock_pr,
         mock_hook,
         mock_todo,
         mock_pr_review,
@@ -201,6 +203,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
         mock_pr_review.return_value = (True, "PR review issue found")
         mock_todo.return_value = (True, "All tasks completed")
         mock_hook.return_value = (True, "Hooks intact")
+        mock_pr.return_value = (True, "PR found")
 
         with patch("builtins.print"):
             result = orchestrator.run_finalization()
@@ -235,8 +238,9 @@ class TestOrchestratorRetrospective(unittest.TestCase):
     @patch("check_protocol_compliance.check_plan_approval")
     @patch("check_protocol_compliance.check_progress_log_exists")
     @patch("check_protocol_compliance.check_todo_completion")
+    @patch("check_protocol_compliance.check_handoff_pr_link")
     def test_run_retrospective_success(
-        self, mock_todo, mock_log, mock_approval, mock_debrief, mock_reflect
+        self, mock_handoff_pr, mock_todo, mock_log, mock_approval, mock_debrief, mock_reflect
     ):
         """Test successful retrospective."""
         mock_reflect.return_value = (True, "Reflection captured")
@@ -244,6 +248,7 @@ class TestOrchestratorRetrospective(unittest.TestCase):
         mock_approval.return_value = (False, "Plan approval is stale")  # Stale means cleared
         mock_log.return_value = (True, "Log exists")
         mock_todo.return_value = (True, "Tasks complete")
+        mock_handoff_pr.return_value = (True, "PR link found")
 
         # Mock reflector synthesis in log
         with patch("check_protocol_compliance.get_active_issue_id") as mock_id:
@@ -352,6 +357,72 @@ class TestOrchestratorPRReview(unittest.TestCase):
         passed, msg = orchestrator.check_pr_review_issue_created()
         self.assertTrue(passed)
         self.assertIn("branch match", msg)
+
+
+class TestOrchestratorPRChecks(unittest.TestCase):
+    """Test the PR existance and handoff link checks."""
+
+    @patch("check_protocol_compliance.check_branch_info")
+    @patch("check_protocol_compliance.check_tool_available")
+    @patch("subprocess.run")
+    def test_check_pr_exists_success(self, mock_run, mock_tool, mock_branch):
+        """Test PR exists search success."""
+        mock_tool.return_value = True
+        mock_branch.return_value = ("feature/test", True)
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "https://github.com/owner/repo/pull/1"
+        mock_run.return_value = mock_result
+
+        passed, msg = orchestrator.check_pr_exists()
+        self.assertTrue(passed)
+        self.assertIn("PR found", msg)
+
+    @patch("check_protocol_compliance.check_branch_info")
+    @patch("check_protocol_compliance.check_tool_available")
+    @patch("subprocess.run")
+    def test_check_pr_exists_missing(self, mock_run, mock_tool, mock_branch):
+        """Test PR missing detection."""
+        mock_tool.return_value = True
+        mock_branch.return_value = ("feature/test", True)
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = ""
+        mock_run.return_value = mock_result
+
+        passed, msg = orchestrator.check_pr_exists()
+        self.assertFalse(passed)
+        self.assertIn("No PR found", msg)
+
+    @patch("check_protocol_compliance.Path.home")
+    def test_check_handoff_pr_link_success(self, mock_home):
+        """Test PR link found in debrief."""
+        mock_session = MagicMock()
+        mock_session.is_dir.return_value = True
+        mock_session.stat.return_value.st_mtime = 123456789
+        
+        mock_brain_dir = MagicMock()
+        mock_brain_dir.exists.return_value = True
+        mock_brain_dir.iterdir.return_value = [mock_session]
+        
+        mock_debrief = MagicMock()
+        mock_debrief.exists.return_value = True
+        mock_debrief.read_text.return_value = "Work complete. PR Link: https://github.com/owner/repo/pull/1"
+        mock_debrief.name = "debrief.md"
+        
+        # mock_home() / ".gemini" / "antigravity" / "brain"
+        mock_h1 = MagicMock()
+        mock_h2 = MagicMock()
+        mock_home.return_value.__truediv__.return_value = mock_h1
+        mock_h1.__truediv__.return_value = mock_h2
+        mock_h2.__truediv__.return_value = mock_brain_dir
+        
+        # session_dir / "debrief.md"
+        mock_session.__truediv__.return_value = mock_debrief
+
+        passed, msg = orchestrator.check_handoff_pr_link()
+        self.assertTrue(passed)
+        self.assertIn("PR link found", msg)
 
 
 if __name__ == "__main__":
