@@ -2,8 +2,9 @@
 
 ## Phase 1: Foundation (Current)
 
-- [ ] Create standardized PR template (`agent-harness-qzo`)
-- [ ] Define PR workflow rules and handoff protocol (`agent-harness-1wj`)
+- [x] Create standardized PR template (`agent-harness-qzo`)
+- [x] Define PR workflow rules and handoff protocol (`agent-harness-1wj`)
+- [x] Enforce Rebase-Squash Strategy (`agent-harness-v0o`)
 
 ## Phase 2: Automation
 
@@ -12,5 +13,5 @@
 
 ## Phase 3: Review Excellence
 
-- [ ] Implement code review skill for agents
+- [x] Implement code review skill for agents (`e00ec035`)
 - [ ] Automate review assignment based on workload/expertise

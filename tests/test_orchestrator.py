@@ -400,23 +400,25 @@ class TestOrchestratorPRChecks(unittest.TestCase):
         mock_session = MagicMock()
         mock_session.is_dir.return_value = True
         mock_session.stat.return_value.st_mtime = 123456789
-        
+
         mock_brain_dir = MagicMock()
         mock_brain_dir.exists.return_value = True
         mock_brain_dir.iterdir.return_value = [mock_session]
-        
+
         mock_debrief = MagicMock()
         mock_debrief.exists.return_value = True
-        mock_debrief.read_text.return_value = "Work complete. PR Link: https://github.com/owner/repo/pull/1"
+        mock_debrief.read_text.return_value = (
+            "Work complete. PR Link: https://github.com/owner/repo/pull/1"
+        )
         mock_debrief.name = "debrief.md"
-        
+
         # mock_home() / ".gemini" / "antigravity" / "brain"
         mock_h1 = MagicMock()
         mock_h2 = MagicMock()
         mock_home.return_value.__truediv__.return_value = mock_h1
         mock_h1.__truediv__.return_value = mock_h2
         mock_h2.__truediv__.return_value = mock_brain_dir
-        
+
         # session_dir / "debrief.md"
         mock_session.__truediv__.return_value = mock_debrief
 
