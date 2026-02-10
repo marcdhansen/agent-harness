@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+
 class ChecklistCheck:
     def __init__(self, data: Dict[str, Any]):
         self.id = data["id"]
@@ -10,6 +11,7 @@ class ChecklistCheck:
         self.validator_name = data["validator"]
         self.args = data.get("args", [])
 
+
 class ChecklistPhase:
     def __init__(self, data: Dict[str, Any]):
         self.id = data["id"]
@@ -17,6 +19,7 @@ class ChecklistPhase:
         self.status = data["status"]  # MANDATORY or OPTIONAL
         self.description = data.get("description", "")
         self.checks = [ChecklistCheck(c) for c in data.get("checks", [])]
+
 
 class ChecklistManager:
     def __init__(self, checklist_dir: Path):
@@ -30,7 +33,7 @@ class ChecklistManager:
         path = self.checklist_dir / f"{name}.json"
         if not path.exists():
             return None
-        
+
         with open(path, "r") as f:
             data = json.load(f)
             # The schema has a 'phases' array at the top level
@@ -41,7 +44,7 @@ class ChecklistManager:
     def run_check(self, check: ChecklistCheck) -> Tuple[bool, str]:
         if check.validator_name not in self.validators:
             return False, f"Validator '{check.validator_name}' not registered"
-        
+
         validator = self.validators[check.validator_name]
         try:
             # We assume validators return (bool, str) or just bool
@@ -56,10 +59,10 @@ class ChecklistManager:
         phase = self.load_checklist(phase_name)
         if not phase:
             return False, [f"Checklist '{phase_name}' not found"], []
-        
+
         blockers = []
         warnings = []
-        
+
         for check in phase.checks:
             passed, msg = self.run_check(check)
             if not passed:
@@ -67,6 +70,6 @@ class ChecklistManager:
                     blockers.append(f"{check.description}: {msg}")
                 else:
                     warnings.append(f"{check.description}: {msg}")
-        
-        passed = (len(blockers) == 0)
+
+        passed = len(blockers) == 0
         return passed, blockers, warnings

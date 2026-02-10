@@ -24,9 +24,9 @@ def finalization_node(state: ProtocolState) -> ProtocolState:
     """
     project_root = Path.cwd()
     checklist_dir = project_root / ".agent/rules/checklists"
-    
+
     manager = ChecklistManager(checklist_dir)
-    
+
     # Register validators
     manager.register_validator("check_git_status", check_git_status)
     manager.register_validator("validate_atomic_commits", validate_atomic_commits)
@@ -65,9 +65,9 @@ def retrospective_node(state: ProtocolState) -> ProtocolState:
     """
     project_root = Path.cwd()
     checklist_dir = project_root / ".agent/rules/checklists"
-    
+
     manager = ChecklistManager(checklist_dir)
-    
+
     # Register validators
     manager.register_validator("check_reflection_invoked", check_reflection_invoked)
     manager.register_validator("check_debriefing_invoked", check_debriefing_invoked)

@@ -14,12 +14,13 @@ from agent_harness.compliance import (
     check_handoff_compliance,
 )
 
+
 @pytest.fixture
 def checklist_manager():
     project_root = Path.cwd()
     checklist_dir = project_root / ".agent/rules/checklists"
     manager = ChecklistManager(checklist_dir)
-    
+
     # Register all validators
     manager.register_validator("check_tool_version", check_tool_version)
     manager.register_validator("check_workspace_integrity", check_workspace_integrity)
@@ -31,8 +32,9 @@ def checklist_manager():
     manager.register_validator("validate_tdd_compliance", validate_tdd_compliance)
     manager.register_validator("check_reflection_invoked", check_reflection_invoked)
     manager.register_validator("check_handoff_compliance", check_handoff_compliance)
-    
+
     return manager
+
 
 def test_initialization_phase(checklist_manager):
     # This might fail depending on current environment, but we want to see it run
@@ -43,11 +45,13 @@ def test_initialization_phase(checklist_manager):
     assert isinstance(blockers, list)
     assert isinstance(warnings, list)
 
+
 def test_finalization_phase(checklist_manager):
     passed, blockers, warnings = checklist_manager.run_phase("finalization")
     print(f"Finalization: Passed={passed}, Blockers={blockers}, Warnings={warnings}")
     assert isinstance(blockers, list)
     assert isinstance(warnings, list)
+
 
 def test_planning_phase(checklist_manager):
     passed, blockers, warnings = checklist_manager.run_phase("planning")

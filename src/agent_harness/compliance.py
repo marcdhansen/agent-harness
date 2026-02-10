@@ -102,19 +102,20 @@ def check_tool_version(tool: str, min_version: str) -> Tuple[bool, str]:
         version_flag = "version" if tool == "bd" else "--version"
         result = subprocess.run([tool, version_flag], capture_output=True, text=True, timeout=5)
         output = result.stdout.strip() or result.stderr.strip()
-        
+
         # Simple version parsing logic
         import re
+
         match = re.search(r"(\d+(?:\.\d+)+)", output)
         if not match:
             return False, f"Could not parse version from: {output}"
-        
+
         current_v = tuple(map(int, match.group(1).split(".")))
         required_v = tuple(map(int, min_version.split(".")))
-        
+
         if current_v < required_v:
             return False, f"Version for '{tool}' is too old: {output} (Required: {min_version})"
-        
+
         return True, f"{tool} version {'.'.join(map(str, current_v))} is OK"
     except Exception as e:
         return False, f"Error checking {tool} version: {e}"
@@ -160,7 +161,7 @@ def check_plan_approval(*args) -> Tuple[bool, str]:
     """Check if plan is approved. Supports 'invert' argument for retrospective."""
     max_hours = 4
     invert = False
-    
+
     if args:
         if args[0] == "invert":
             invert = True
@@ -169,14 +170,18 @@ def check_plan_approval(*args) -> Tuple[bool, str]:
                 max_hours = int(args[0])
             except ValueError:
                 pass
-                
+
     approval = check_approval(max_hours=max_hours)
-    
+
     if invert:
         passed = not approval.approved
-        msg = "Plan approval marker cleared" if passed else "Plan approval marker still present in task.md"
+        msg = (
+            "Plan approval marker cleared"
+            if passed
+            else "Plan approval marker still present in task.md"
+        )
         return passed, msg
-    
+
     passed = approval.approved and not approval.stale
     msg = f"Approved: {approval.approved}, Stale: {approval.stale}"
     return passed, msg
@@ -316,7 +321,9 @@ def validate_atomic_commits(*args) -> Tuple[bool, str]:
     """Validate atomic commit requirements."""
     try:
         msg = subprocess.check_output(["git", "log", "-1", "--pretty=%B"], text=True).strip()
-        patterns = [r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+$"]
+        patterns = [
+            r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+$"
+        ]
         if any(re.match(p, msg) for p in patterns):
             return True, f"Commit message matches conventional format: {msg[:30]}..."
         return False, f"Last commit message does not match conventional format: '{msg}'"
@@ -328,9 +335,14 @@ def validate_tdd_compliance(*args) -> Tuple[bool, str]:
     """Verify TDD compliance."""
     try:
         # Check if any file in tests/ was modified in the last 5 commits
-        diff_files = subprocess.check_output(["git", "diff", "--name-only", "HEAD~5", "HEAD"], text=True).splitlines()
+        diff_files = subprocess.check_output(
+            ["git", "diff", "--name-only", "HEAD~5", "HEAD"], text=True
+        ).splitlines()
         if any(f.startswith("tests/") for f in diff_files):
             return True, "Test changes detected in recent commits"
-        return False, "No test changes detected in recent commits (TDD requires implementation + tests)"
+        return (
+            False,
+            "No test changes detected in recent commits (TDD requires implementation + tests)",
+        )
     except Exception:
         return True, "Could not verify TDD (repo state or history issues)"
