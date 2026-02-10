@@ -6,6 +6,8 @@ from agent_harness.compliance import (
     check_tool_version,
     check_workspace_integrity,
     check_planning_docs,
+    check_beads_issue,
+    check_plan_approval,
 )
 from agent_harness.checklists import ChecklistManager
 from agent_harness.state import ProtocolState
@@ -28,11 +30,8 @@ def initialization_node(state: ProtocolState) -> ProtocolState:
         check_planning_docs(project_root).implementation_plan_exists,
         f"Missing: {check_planning_docs(project_root).missing_docs}"
     ))
-    manager.register_validator("check_beads_issue", lambda *args: (True, "Implicitly checked")) # Placeholder
-    manager.register_validator("check_plan_approval", lambda *args: (
-        check_approval().approved and not check_approval().stale,
-        f"Status: {check_approval()}"
-    ))
+    manager.register_validator("check_beads_issue", check_beads_issue)
+    manager.register_validator("check_plan_approval", check_plan_approval)
 
     # Run initialization phase
     passed, blockers, warnings = manager.run_phase("initialization")

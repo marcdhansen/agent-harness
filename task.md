@@ -20,11 +20,11 @@ Convert the SOP checklists into a structured JSON format to enable programmatic 
 
 ## Success Criteria
 
-- [ ] JSON Schema defines phase, description, status (MANDATORY/OPTIONAL), and check details.
-- [ ] All phases from `SOP_COMPLIANCE_CHECKLIST.md` are represented in JSON.
-- [ ] Orchestrator runs all checks defined in JSON.
-- [ ] Orchestrator output matches the JSON-defined structure.
-- [ ] tests/test_sop_json_validation.py passes.
+- [x] JSON Schema defines phase, description, status (MANDATORY/OPTIONAL), and check details.
+- [x] All phases from `SOP_COMPLIANCE_CHECKLIST.md` are represented in JSON.
+- [x] Orchestrator runs all checks defined in JSON.
+- [x] Orchestrator output matches the JSON-defined structure.
+- [x] tests/test_sop_json_validation.py passes.
 
 ## Progress
 
@@ -33,7 +33,7 @@ Convert the SOP checklists into a structured JSON format to enable programmatic 
 - [x] Define JSON Schema.
 - [x] Convert MD checklists to JSON.
 - [x] Update Orchestrator logic.
-- [ ] Verify compliance.
+- [x] Verify compliance and generated docs.
 
 ## Approval
 

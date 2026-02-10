@@ -3,58 +3,57 @@ from datetime import datetime
 from pathlib import Path
 
 from agent_harness.state import ProtocolState
+from agent_harness.checklists import ChecklistManager
+from agent_harness.compliance import (
+    check_git_status,
+    validate_atomic_commits,
+    validate_tdd_compliance,
+    check_reflection_invoked,
+    check_handoff_compliance,
+    check_debriefing_invoked,
+    check_plan_approval,
+    check_progress_log_exists,
+    check_handoff_pr_link,
+    check_todo_completion,
+)
 
 
 def finalization_node(state: ProtocolState) -> ProtocolState:
     """
-    Node for performing the Finalization checks.
+    Node for performing the Finalization checks using JSON checklists.
     """
-    blockers = []
+    project_root = Path.cwd()
+    checklist_dir = project_root / ".agent/rules/checklists"
+    
+    manager = ChecklistManager(checklist_dir)
+    
+    # Register validators
+    manager.register_validator("check_git_status", check_git_status)
+    manager.register_validator("validate_atomic_commits", validate_atomic_commits)
+    manager.register_validator("validate_tdd_compliance", validate_tdd_compliance)
+    manager.register_validator("check_reflection_invoked", check_reflection_invoked)
+    manager.register_validator("check_handoff_compliance", check_handoff_compliance)
 
-    # 1. Git Status Check
-    try:
-        status_out = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()
-        if status_out:
-            blockers.append("Uncommitted changes detected in repository")
-    except Exception as e:
-        blockers.append(f"Failed to check git status: {str(e)}")
-
-    # 2. Reflection Check (look for recent reflection in brain or logs)
-    reflection_found = False
-    brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
-    if brain_dir.exists():
-        # Look for reflect_history.json or similar in recent session dirs
-        session_dirs = sorted(
-            [d for d in brain_dir.iterdir() if d.is_dir()],
-            key=lambda x: x.stat().st_mtime,
-            reverse=True,
-        )[:1]
-        for d in session_dirs:
-            if (d / "reflect_history.json").exists() or (d / "debrief.md").exists():
-                reflection_found = True
-                break
-
-    if not reflection_found:
-        blockers.append("No recent reflection found. Invoke /reflect before Finalization.")
-
-    finalization_passed = len(blockers) == 0
+    # Run finalization phase
+    passed, blockers, warnings = manager.run_phase("finalization")
 
     # Add step to progress
     step = {
         "index": state["current_step_index"],
         "task_id": "Finalization",
-        "action": "Run Finalization check",
-        "outcome": f"Passed: {finalization_passed}. Blockers: {len(blockers)}",
-        "status": "success" if finalization_passed else "failure",
+        "action": "Run JSON-based Finalization Check",
+        "outcome": f"Passed: {passed}. Blockers: {len(blockers)}, Warnings: {len(warnings)}",
+        "status": "success" if passed else "failure",
         "timestamp": datetime.now().isoformat(),
     }
 
     return {
         **state,
-        "finalization_passed": finalization_passed,
+        "finalization_passed": passed,
         "blockers": blockers,
-        "current_phase": "Retrospective" if finalization_passed else "FINALIZATION_BLOCKED",
-        "steps_completed": [step],
+        "warnings": warnings,
+        "current_phase": "Retrospective" if passed else "FINALIZATION_BLOCKED",
+        "steps_completed": state.get("steps_completed", []) + [step],
         "current_step_index": state["current_step_index"] + 1,
         "last_updated": datetime.now().isoformat(),
     }
@@ -62,15 +61,41 @@ def finalization_node(state: ProtocolState) -> ProtocolState:
 
 def retrospective_node(state: ProtocolState) -> ProtocolState:
     """
-    Node for generating the retrospective and syncing to memory.
+    Node for performing the Retrospective check using JSON checklists.
     """
-    print(f"🎖️ Retrospective for {state['process_id']}")
+    project_root = Path.cwd()
+    checklist_dir = project_root / ".agent/rules/checklists"
+    
+    manager = ChecklistManager(checklist_dir)
+    
+    # Register validators
+    manager.register_validator("check_reflection_invoked", check_reflection_invoked)
+    manager.register_validator("check_debriefing_invoked", check_debriefing_invoked)
+    manager.register_validator("check_plan_approval", check_plan_approval)
+    manager.register_validator("check_progress_log_exists", check_progress_log_exists)
+    manager.register_validator("check_handoff_pr_link", check_handoff_pr_link)
+    manager.register_validator("check_todo_completion", check_todo_completion)
 
-    # Placeholder for actual retrospective generation logic
-    # In a real system, this would call specialized agents or tools
+    # Run retrospective phase
+    passed, blockers, warnings = manager.run_phase("retrospective")
+
+    # Add step to progress
+    step = {
+        "index": state["current_step_index"],
+        "task_id": "Retrospective",
+        "action": "Run JSON-based Retrospective Check",
+        "outcome": f"Passed: {passed}. Blockers: {len(blockers)}, Warnings: {len(warnings)}",
+        "status": "success" if passed else "failure",
+        "timestamp": datetime.now().isoformat(),
+    }
 
     return {
         **state,
-        "current_phase": "COMPLETE",
+        "retrospective_passed": passed,
+        "blockers": blockers,
+        "warnings": warnings,
+        "current_phase": "COMPLETE" if passed else "RETROSPECTIVE_BLOCKED",
+        "steps_completed": state.get("steps_completed", []) + [step],
+        "current_step_index": state["current_step_index"] + 1,
         "last_updated": datetime.now().isoformat(),
     }
