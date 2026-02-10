@@ -25,14 +25,7 @@ def initialization_node(state: ProtocolState) -> ProtocolState:
     # Register validators
     manager.register_validator("check_tool_version", check_tool_version)
     manager.register_validator("check_workspace_integrity", check_workspace_integrity)
-    manager.register_validator(
-        "check_planning_docs",
-        lambda *args: (
-            check_planning_docs(project_root).roadmap_exists
-            and check_planning_docs(project_root).implementation_plan_exists,
-            f"Missing: {check_planning_docs(project_root).missing_docs}",
-        ),
-    )
+    manager.register_validator("check_planning_docs", check_planning_docs)
     manager.register_validator("check_beads_issue", check_beads_issue)
     manager.register_validator("check_plan_approval", check_plan_approval)
 
