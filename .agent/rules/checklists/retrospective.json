@@ -1,0 +1,51 @@
+{
+    "phases": [
+        {
+            "id": "retrospective",
+            "name": "Phase 6: Retrospective",
+            "status": "MANDATORY",
+            "description": "Strategic learning, session closure, and handoff.",
+            "checks": [
+                {
+                    "id": "reflection_invoked",
+                    "description": "Verify structured reflection was captured (.reflection_input.json)",
+                    "type": "BLOCKER",
+                    "validator": "check_reflection_invoked"
+                },
+                {
+                    "id": "debriefing_invoked",
+                    "description": "Verify mission debriefing file exists",
+                    "type": "WARNING",
+                    "validator": "check_debriefing_invoked"
+                },
+                {
+                    "id": "plan_cleared",
+                    "description": "Verify plan approval marker is cleared in task.md",
+                    "type": "WARNING",
+                    "validator": "check_plan_approval",
+                    "args": [
+                        "invert"
+                    ]
+                },
+                {
+                    "id": "reflector_synthesis",
+                    "description": "Verify reflector synthesis in progress log",
+                    "type": "WARNING",
+                    "validator": "check_progress_log_exists"
+                },
+                {
+                    "id": "pr_link_handoff",
+                    "description": "Verify GitHub PR link in debrief.md",
+                    "type": "BLOCKER",
+                    "validator": "check_handoff_pr_link"
+                },
+                {
+                    "id": "todo_completion",
+                    "description": "Verify all tasks in task.md are completed",
+                    "type": "BLOCKER",
+                    "validator": "check_todo_completion"
+                }
+            ]
+        }
+    ]
+}

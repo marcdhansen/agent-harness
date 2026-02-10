@@ -1,0 +1,51 @@
+{
+    "phases": [
+        {
+            "id": "execution",
+            "name": "Phase 4: Execution",
+            "status": "MANDATORY",
+            "description": "Active work phase - executing the task.",
+            "checks": [
+                {
+                    "id": "feature_branch",
+                    "description": "Verify on a feature branch",
+                    "type": "BLOCKER",
+                    "validator": "check_branch_info",
+                    "args": [
+                        "feature"
+                    ]
+                },
+                {
+                    "id": "task_tracked",
+                    "description": "Verify task.md exists in brain directory",
+                    "type": "BLOCKER",
+                    "validator": "check_workspace_integrity",
+                    "args": [
+                        "task"
+                    ]
+                },
+                {
+                    "id": "beads_issue_mandatory",
+                    "description": "Verify active Beads issue (MANDATORY for Execution)",
+                    "type": "BLOCKER",
+                    "validator": "check_beads_issue"
+                },
+                {
+                    "id": "plan_approval_mandatory",
+                    "description": "Verify plan approval (MANDATORY for Execution)",
+                    "type": "BLOCKER",
+                    "validator": "check_plan_approval",
+                    "args": [
+                        "4"
+                    ]
+                },
+                {
+                    "id": "tdd_compliance_check",
+                    "description": "Verify TDD compliance",
+                    "type": "BLOCKER",
+                    "validator": "validate_tdd_compliance"
+                }
+            ]
+        }
+    ]
+}

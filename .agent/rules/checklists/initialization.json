@@ -1,0 +1,59 @@
+{
+    "phases": [
+        {
+            "id": "initialization",
+            "name": "Phase 2: Initialization",
+            "status": "MANDATORY",
+            "description": "Verify environment, tools, and planning readiness.",
+            "checks": [
+                {
+                    "id": "tool_check_bd",
+                    "description": "Verify 'bd' tool version",
+                    "type": "BLOCKER",
+                    "validator": "check_tool_version",
+                    "args": [
+                        "bd",
+                        "0.1.0"
+                    ]
+                },
+                {
+                    "id": "tool_check_git",
+                    "description": "Verify 'git' tool version",
+                    "type": "BLOCKER",
+                    "validator": "check_tool_version",
+                    "args": [
+                        "git",
+                        "2.0.0"
+                    ]
+                },
+                {
+                    "id": "workspace_integrity",
+                    "description": "Verify mandatory directories (.git, .agent, .beads)",
+                    "type": "BLOCKER",
+                    "validator": "check_workspace_integrity"
+                },
+                {
+                    "id": "planning_docs",
+                    "description": "Verify planning documents exist (ROADMAP.md, ImplementationPlan.md)",
+                    "type": "BLOCKER",
+                    "validator": "check_planning_docs"
+                },
+                {
+                    "id": "beads_issue",
+                    "description": "Verify active Beads issue exists",
+                    "type": "BLOCKER",
+                    "validator": "check_beads_issue"
+                },
+                {
+                    "id": "plan_approval",
+                    "description": "Verify plan approval is fresh (<4h)",
+                    "type": "BLOCKER",
+                    "validator": "check_plan_approval",
+                    "args": [
+                        "4"
+                    ]
+                }
+            ]
+        }
+    ]
+}
