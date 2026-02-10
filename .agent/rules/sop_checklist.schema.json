@@ -1,0 +1,76 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "SOP Checklist Schema",
+    "type": "object",
+    "properties": {
+        "phases": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "MANDATORY",
+                            "OPTIONAL"
+                        ]
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "checks": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "BLOCKER",
+                                        "WARNING"
+                                    ]
+                                },
+                                "validator": {
+                                    "type": "string"
+                                },
+                                "args": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "description",
+                                "type",
+                                "validator"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "status",
+                    "checks"
+                ]
+            }
+        }
+    },
+    "required": [
+        "phases"
+    ]
+}

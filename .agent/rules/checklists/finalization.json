@@ -1,0 +1,42 @@
+{
+    "phases": [
+        {
+            "id": "finalization",
+            "name": "Phase 5: Finalization",
+            "status": "MANDATORY",
+            "description": "Quality gates, atomic commits, TDD validation, and PR creation.",
+            "checks": [
+                {
+                    "id": "git_clean",
+                    "description": "Verify working tree is clean",
+                    "type": "BLOCKER",
+                    "validator": "check_git_status"
+                },
+                {
+                    "id": "atomic_commits",
+                    "description": "Validate atomic commit requirements and conventional format",
+                    "type": "BLOCKER",
+                    "validator": "validate_atomic_commits"
+                },
+                {
+                    "id": "tdd_compliance",
+                    "description": "Validate TDD compliance (implementation accompanied by tests)",
+                    "type": "BLOCKER",
+                    "validator": "validate_tdd_compliance"
+                },
+                {
+                    "id": "reflection_invoked",
+                    "description": "Verify structured reflection was captured (.reflection_input.json)",
+                    "type": "BLOCKER",
+                    "validator": "check_reflection_invoked"
+                },
+                {
+                    "id": "handoff_compliance",
+                    "description": "Verify hand-off documentation for multi-phase tasks",
+                    "type": "BLOCKER",
+                    "validator": "check_handoff_compliance"
+                }
+            ]
+        }
+    ]
+}

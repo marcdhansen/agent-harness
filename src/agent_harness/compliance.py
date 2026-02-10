@@ -1,6 +1,8 @@
 import subprocess
+import re
 from datetime import datetime
 from pathlib import Path
+from typing import Tuple, List
 
 from pydantic import BaseModel, Field
 
@@ -82,3 +84,41 @@ def check_beads_available() -> bool:
         return True
     except Exception:
         return False
+
+
+def check_tool_version(tool: str, min_version: str) -> Tuple[bool, str]:
+    """Check if a tool's version meets the minimum requirement."""
+    try:
+        version_flag = "version" if tool == "bd" else "--version"
+        result = subprocess.run([tool, version_flag], capture_output=True, text=True, timeout=5)
+        output = result.stdout.strip() or result.stderr.strip()
+        
+        # Simple version parsing logic
+        import re
+        match = re.search(r"(\d+(?:\.\d+)+)", output)
+        if not match:
+            return False, f"Could not parse version from: {output}"
+        
+        current_v = tuple(map(int, match.group(1).split(".")))
+        required_v = tuple(map(int, min_version.split(".")))
+        
+        if current_v < required_v:
+            return False, f"Version for '{tool}' is too old: {output} (Required: {min_version})"
+        
+        return True, f"{tool} version {'.'.join(map(str, current_v))} is OK"
+    except Exception as e:
+        return False, f"Error checking {tool} version: {e}"
+
+
+def check_workspace_integrity(*args) -> Tuple[bool, str]:
+    """Verify workspace integrity by checking for mandatory directories and files."""
+    mandatory_paths = [
+        Path(".git"),
+        Path(".agent"),
+        Path(".beads"),
+    ]
+
+    missing = [str(p) for p in mandatory_paths if not p.exists()]
+    if missing:
+        return False, f"Missing mandatory components: {', '.join(missing)}"
+    return True, "Workspace integrity verified"

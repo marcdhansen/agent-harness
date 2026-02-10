@@ -1,0 +1,36 @@
+{
+    "phases": [
+        {
+            "id": "planning",
+            "name": "Phase 3: Planning",
+            "status": "MANDATORY",
+            "description": "Define proposed changes, blast radius, and success criteria.",
+            "checks": [
+                {
+                    "id": "implementation_plan_updated",
+                    "description": "Update ImplementationPlan.md with proposed changes",
+                    "type": "BLOCKER",
+                    "validator": "check_planning_docs",
+                    "args": [
+                        "ImplementationPlan.md"
+                    ]
+                },
+                {
+                    "id": "blast_radius_analysis",
+                    "description": "Perform blast radius analysis",
+                    "type": "WARNING",
+                    "validator": "check_planning_docs",
+                    "args": [
+                        "blast_radius"
+                    ]
+                },
+                {
+                    "id": "user_approval_execution",
+                    "description": "Get explicit user approval before EXECUTION",
+                    "type": "BLOCKER",
+                    "validator": "check_plan_approval"
+                }
+            ]
+        }
+    ]
+}

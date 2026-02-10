@@ -1,0 +1,45 @@
+{
+    "phases": [
+        {
+            "id": "clean_state",
+            "name": "Phase 7: Clean State Validation",
+            "status": "MANDATORY",
+            "description": "Final verification: repo should be clean after PR merge.",
+            "checks": [
+                {
+                    "id": "branch_main",
+                    "description": "Verify on main/master branch",
+                    "type": "BLOCKER",
+                    "validator": "check_branch_info",
+                    "args": [
+                        "main"
+                    ]
+                },
+                {
+                    "id": "git_clean",
+                    "description": "Verify working tree is clean",
+                    "type": "BLOCKER",
+                    "validator": "check_git_status"
+                },
+                {
+                    "id": "synced_remote",
+                    "description": "Verify up to date with remote",
+                    "type": "BLOCKER",
+                    "validator": "check_git_status",
+                    "args": [
+                        "synced"
+                    ]
+                },
+                {
+                    "id": "cleanup_artifacts",
+                    "description": "Verify temporary artifacts removed (task.md, debrief.md, etc.)",
+                    "type": "BLOCKER",
+                    "validator": "check_workspace_integrity",
+                    "args": [
+                        "cleanup"
+                    ]
+                }
+            ]
+        }
+    ]
+}
