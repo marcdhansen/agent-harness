@@ -1,0 +1,82 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Agent Session Reflection",
+    "description": "Standardized format for session-end reflection and meta-learning capture",
+    "type": "object",
+    "properties": {
+        "session_name": {
+            "type": "string",
+            "description": "The name or ID of the session/issue"
+        },
+        "outcome": {
+            "type": "string",
+            "enum": [
+                "SUCCESS",
+                "PARTIAL",
+                "FAILURE"
+            ],
+            "description": "The high-level outcome of the session"
+        },
+        "duration_hours": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Time spent in hours"
+        },
+        "success_metrics": {
+            "type": "object",
+            "additionalProperties": {
+                "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                ]
+            },
+            "description": "Key-value pairs of quantitative metrics"
+        },
+        "technical_learnings": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Specific technical discoveries or architectural insights"
+        },
+        "challenges_overcome": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Problems solved and their solutions"
+        },
+        "protocol_issues": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Friction points or failures in the standard operating procedure"
+        },
+        "process_improvements": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Proposed optimizations to the workflow or tooling"
+        },
+        "quantitative_results": {
+            "type": "object",
+            "additionalProperties": {
+                "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                ]
+            },
+            "description": "Specific performance data or numeric achievements"
+        }
+    },
+    "required": [
+        "session_name",
+        "outcome",
+        "technical_learnings"
+    ],
+    "additionalProperties": true
+}

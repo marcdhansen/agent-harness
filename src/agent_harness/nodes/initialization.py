@@ -3,56 +3,52 @@ from pathlib import Path
 
 from agent_harness.compliance import (
     check_approval,
-    check_beads_available,
+    check_tool_version,
+    check_workspace_integrity,
     check_planning_docs,
+    check_beads_issue,
+    check_plan_approval,
 )
+from agent_harness.checklists import ChecklistManager
 from agent_harness.state import ProtocolState
 
 
 def initialization_node(state: ProtocolState) -> ProtocolState:
     """
-    Node for performing the Initialization check.
+    Node for performing the Initialization check using JSON checklists.
     """
     project_root = Path.cwd()
-    blockers = []
-    warnings = []
+    checklist_dir = project_root / ".agent/rules/checklists"
 
-    # 1. Check planning docs
-    context = check_planning_docs(project_root)
-    if not context.roadmap_exists or not context.implementation_plan_exists:
-        # These are warnings in our evolved system to allow flexibility
-        warnings.append(f"Missing or misplaced planning docs: {context.missing_docs}")
+    manager = ChecklistManager(checklist_dir)
 
-    # 2. Check approval
-    approval = check_approval()
-    if not approval.approved:
-        warnings.append("No explicit plan approval found in task.md")
-    elif approval.stale:
-        warnings.append(f"Plan approval is stale ({approval.age_hours:.1f} hours old)")
+    # Register validators
+    manager.register_validator("check_tool_version", check_tool_version)
+    manager.register_validator("check_workspace_integrity", check_workspace_integrity)
+    manager.register_validator("check_planning_docs", check_planning_docs)
+    manager.register_validator("check_beads_issue", check_beads_issue)
+    manager.register_validator("check_plan_approval", check_plan_approval)
 
-    # 3. Check beads
-    if not check_beads_available():
-        blockers.append("Beads (bd) CLI not available")
-
-    initialization_passed = len(blockers) == 0
+    # Run initialization phase
+    passed, blockers, warnings = manager.run_phase("initialization")
 
     # Add step to progress
     step = {
         "index": state["current_step_index"],
         "task_id": "Initialization",
-        "action": "Run Initialization Check",
-        "outcome": f"Passed: {initialization_passed}. Blockers: {len(blockers)}, Warnings: {len(warnings)}",
-        "status": "success" if initialization_passed else "failure",
+        "action": "Run JSON-based Initialization Check",
+        "outcome": f"Passed: {passed}. Blockers: {len(blockers)}, Warnings: {len(warnings)}",
+        "status": "success" if passed else "failure",
         "timestamp": datetime.now().isoformat(),
     }
 
     return {
         **state,
-        "initialization_passed": initialization_passed,
+        "initialization_passed": passed,
         "blockers": blockers,
         "warnings": warnings,
-        "current_phase": "Execution" if initialization_passed else "BLOCKED",
-        "steps_completed": [step],
+        "current_phase": "Execution" if passed else "BLOCKED",
+        "steps_completed": state.get("steps_completed", []) + [step],
         "current_step_index": state["current_step_index"] + 1,
         "last_updated": datetime.now().isoformat(),
     }
