@@ -1,58 +1,67 @@
-# 📋 Implementation Plan: agent-harness-v0o - Enforce Rebase-Squash Strategy
+# 📋 Implementation Plan: agent-harness-2rn - Standardize structured JSON for reflection capture
 
 ## Objective
 
-Prevent SOP violations (merge commits/multi-commit PRs) by automating enforcement in the Orchestrator's Finalization phase.
+Standardize session reflections into a machine-readable `.reflection_input.json` file. This enables automated validation, consistent meta-learning, and reduces cognitive load during the retrospective phase.
 
 ## Proposed Changes
 
-### 1. Orchestrator Enhancement (`check_protocol_compliance.py`)
+### 1. Schema Definition (`.agent/rules/reflection.schema.json`)
 
-- **`validate_atomic_commits()`**:
-  - Update logic to compare current branch against `main`.
-  - Count commits: `git rev-list --count main..HEAD`.
-  - If count > 1, block finalization with a clear instruction to squash.
-  - Check for merge commits: `git rev-list --merges main..HEAD`.
-  - If any merge commits found, block finalization.
+- Create a JSON Schema that defines the structure of the reflection.
+- **Fields**:
+  - `session_name` (string)
+  - `outcome` (string: SUCCESS|PARTIAL|FAILURE)
+  - `duration_hours` (number)
+  - `success_metrics` (object/map)
+  - `technical_learnings` (array of strings)
+  - `challenges_overcome` (array of strings)
+  - `protocol_issues` (array of strings)
+  - `process_improvements` (array of strings)
+  - `quantitative_results` (object/map)
+
+### 2. Reflect Skill Enhancement (`~/.gemini/antigravity/skills/reflect/enhanced_reflection.py`)
+
+- Update `EnhancedReflection._save_reflection` to also write the single session's data to `.reflection_input.json` in the workspace root.
+- Ensure the output format matches the defined schema.
+- Add basic validation logic if possible.
+
+### 3. Orchestrator Enhancement (`~/.gemini/antigravity/skills/Orchestrator/scripts/check_protocol_compliance.py`)
+
+- **Update `check_reflection_invoked()`**:
+  - Change `reflection_paths` to include `.reflection_input.json`.
+  - Add logic to parse the JSON and verify mandatory fields exist.
 - **Improved Messaging**:
-  - Provide specific git commands for the user/agent to fix the violation (e.g., `git rebase -i main`).
+  - If `.reflection_input.json` is missing, provide the command to generate it (`/reflect`).
 
-### 2. Testing (`tests/test_orchestrator_atomic_commits.py`)
+### 4. Testing (`tests/test_reflection_validation.py`)
 
-- Implement 5 distinct test cases:
-  1. **Success**: Single commit, no merges.
-  2. **Failure**: Multiple commits (no merges).
-  3. **Failure**: Single commit that is a merge commit.
-  4. **Failure**: Multiple commits including a merge commit.
-  5. **Success**: Rebased and squashed branch (1 commit).
+- Implement test cases for:
+  - Missing `.reflection_input.json`.
+  - Malformed/Invalid JSON.
+  - Valid JSON passing the check.
 
-### 3. Browser Automation (`skills/browser-manager/`)
+### 5. SOP Documentation
 
-- Review and update Playwright scripts to ensure the "Squash and merge" button is explicitly targeted by ID or label, rather than relying on default browser state.
-
-### 4. PR Template Updates
-
-- Add a mandatory checklist item in `.github/PULL_REQUEST_TEMPLATE.md`:
-  - `[ ] Branch has been squashed into a single atomic commit.`
-  - `[ ] No merge commits are present (rebase used instead).`
+- Update `.agent/docs/SOP_COMPLIANCE_CHECKLIST.md` and `AGENTS.md` (if relevant) to include the new requirement.
 
 ## Verification
 
 ### Automated
 
-- `pytest tests/test_orchestrator_atomic_commits.py`
-- `pytest tests/test_orchestrator.py` (ensure no regressions)
+- `pytest tests/test_reflection_validation.py`
+- `check_protocol_compliance.py --finalize` in a test environment.
 
 ### Manual
 
-- Create a branch with 2 commits and try to run `check_protocol_compliance.py --finalize`. Verify it blocks.
-- Squash the commits and verify it passes.
+- Run `/reflect` and verify `.reflection_input.json` is created and populated.
+- Delete the file and verify `check_protocol_compliance.py --finalize` blocks.
 
 ## Blast Radius
 
-- **Low-Medium**: Only affects the Finalization phase. If logic is too strict or buggy, it could block PR creation.
-- **Dependencies**: Depends on `git` CLI availability.
+- **Medium**: Affects the Finalization phase. If the JSON parsing fails or the schema is too restrictive, it could block PR creation.
+- **Dependencies**: Depends on the existence of the Orchestrator and Reflect skills in their respective locations.
 
 ## Rollback Plan
 
-- Revert changes to `check_protocol_compliance.py`.
+- Revert changes to `check_protocol_compliance.py` and `enhanced_reflection.py`.
