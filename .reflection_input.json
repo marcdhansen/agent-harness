@@ -1,32 +1,33 @@
 {
-  "session_name": "Standardize Beads closure notes [agent-harness-4nb]",
+  "timestamp": 1770687643.564252,
   "outcome": "SUCCESS",
-  "duration_hours": 1.5,
+  "duration_hours": 1.0,
   "success_metrics": {
-    "Files Changed": 4,
-    "PRs Created": 3,
-    "Issues Closed": 1
+    "Files Modified": 2777,
+    "Session Completed": true
   },
   "technical_learnings": [
-    "Used 'bd comments add' for standardized closure notes as 'bd close' does not take a comment parameter.",
-    "Integrated productivity aliases (bd-note) into Beads Field Manual to align with agent intuition.",
-    "Cross-repo compliance validation in Orchestrator ensures all linked repositories follow the PR workflow."
+    "Non-interactive reflection fallback used",
+    "Session completed with automated capture"
   ],
   "challenges_overcome": [
-    "Resolved URL formatting mismatch in replace_file_content by exactly matching the markdown source.",
-    "Fixed multiple local commits to maintain atomic history required by Finalization check.",
-    "Resolved protected branch issues in linked repos by creating feature branches and PRs."
+    "Non-interactive environment detected",
+    "Reflection completed using fallback mechanism"
   ],
-  "protocol_issues": [
-    "Cognitive load in remembering correct Beads commands for closure notes; solved by documentation and aliases.",
-    "Finalization check blocks when linked repositories have uncommitted changes or are on main branch."
-  ],
+  "protocol_issues": [],
   "process_improvements": [
-    "Recommended 'bd-note' alias in Beads Field Manual.",
-    "Standardized closure note instructions in SOP checklist and Finalization documents."
+    "Reflection system now supports non-interactive mode"
   ],
-  "quantitative_results": {
-    "Compliance Score": "100%",
-    "Finalization Blockers Resolved": 4
-  }
+  "quantitative_results": {},
+  "handoff_quality": {
+    "was_multi_phase": false,
+    "handoff_completed": false,
+    "compliance_score": 0,
+    "document_quality": "Not applicable (single-phase implementation)",
+    "issues_found": [],
+    "successor_readiness": "N/A"
+  },
+  "next_mission_readiness": true,
+  "status": "FALLBACK_COMPLETE",
+  "session_name": "Unknown Mission"
 }
