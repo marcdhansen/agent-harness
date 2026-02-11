@@ -42,6 +42,9 @@ Quality gates, atomic commits, TDD validation, and PR creation.
 - [ ] **Validate TDD compliance (implementation accompanied by tests)** (Validator: `validate_tdd_compliance`)
 - [ ] **Verify structured reflection was captured (.reflection_input.json)** (Validator: `check_reflection_invoked`)
 - [ ] **Verify hand-off documentation for multi-phase tasks** (Validator: `check_handoff_compliance`)
+- [ ] **Verify no orphaned or multiple open PRs for the task** (Validator: `check_handoff_pr_verification`)
+- [ ] **Verify PR references the active Beads issue** (Validator: `check_beads_pr_sync`)
+- [ ] **Verify the workspace is clean of temporary artifacts** (Validator: `check_workspace_cleanup`)
 
 ### Phase 6: Retrospective — MANDATORY
 
@@ -62,4 +65,3 @@ Final verification: repo should be clean after PR merge.
 - [ ] **Verify working tree is clean** (Validator: `check_git_status`)
 - [ ] **Verify up to date with remote** (Validator: `check_git_status`)
 - [ ] **Verify temporary artifacts removed (task.md, debrief.md, etc.)** (Validator: `check_workspace_integrity`)
-
