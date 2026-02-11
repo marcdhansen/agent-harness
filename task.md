@@ -1,27 +1,21 @@
-# Task: Modularize Orchestrator Script [agent-harness-g2h]
+# Task: Prevent Orphaned Pull Requests and Workspace Drift [agent-harness-niy]
 
 ## Status: COMPLETED
 
-## Issue: [agent-harness-g2h]
-
-## PR: <https://github.com/marcdhansen/agent-harness/pull/12>
-
 ## Objectives
 
-- [x] Extract git validation logic to `git_validator.py`
-- [x] Extract plan validation logic to `plan_validator.py`
-- [x] Extract code validation logic to `code_validator.py`
-- [x] Extract finalization validation logic to `finalization_validator.py`
-- [x] Update `check_protocol_compliance.py` to use modular imports
-- [x] Ensure JSON-driven architecture is preserved and enhanced
-- [x] Pass all finalization checks
+- [x] Implement `check_handoff_pr_verification` validator
+- [x] Implement `check_beads_pr_sync` validator
+- [x] Implement `check_workspace_cleanup` validator
+- [x] Update SOP documentation for PR supersession
+- [x] Integrate all gates into Orchestrator finalization
 
 ## Approval
 
-- [x] Protocol Compliance Verified
+[ ] Protocol Compliance Verified
 
 ## Implementation Details
 
-- Moved validators to `~/.gemini/antigravity/skills/Orchestrator/scripts/validators/`
-- Added `common.py` for shared utilities.
-- Implemented `SOP Infrastructure Change Check` to mandate Full Mode for critical file edits.
+- Added validators to `finalization_validator.py`
+- Updated JSON checklists in `.agent/rules/checklists/`
+- Verified with unit tests in `tests/test_handoff_pr_verification.py`
