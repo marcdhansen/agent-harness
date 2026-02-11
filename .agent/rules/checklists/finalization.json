@@ -35,6 +35,24 @@
                     "description": "Verify hand-off documentation for multi-phase tasks",
                     "type": "BLOCKER",
                     "validator": "check_handoff_compliance"
+                },
+                {
+                    "id": "handoff_pr_verification",
+                    "description": "Verify no orphaned or multiple open PRs for the task",
+                    "type": "BLOCKER",
+                    "validator": "check_handoff_pr_verification"
+                },
+                {
+                    "id": "beads_pr_sync",
+                    "description": "Verify PR references the active Beads issue",
+                    "type": "BLOCKER",
+                    "validator": "check_beads_pr_sync"
+                },
+                {
+                    "id": "workspace_cleanup",
+                    "description": "Verify the workspace is clean of temporary artifacts",
+                    "type": "BLOCKER",
+                    "validator": "check_workspace_cleanup"
                 }
             ]
         }
