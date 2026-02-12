@@ -14,6 +14,7 @@ from agent_harness.compliance import (
     check_plan_approval,
     check_progress_log_exists,
     check_handoff_pr_link,
+    check_handoff_beads_id,
     check_todo_completion,
 )
 
@@ -33,6 +34,7 @@ def finalization_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("validate_tdd_compliance", validate_tdd_compliance)
     manager.register_validator("check_reflection_invoked", check_reflection_invoked)
     manager.register_validator("check_handoff_compliance", check_handoff_compliance)
+    manager.register_validator("check_handoff_beads_id", check_handoff_beads_id)
 
     # Run finalization phase
     passed, blockers, warnings = manager.run_phase("finalization")
@@ -74,6 +76,7 @@ def retrospective_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_plan_approval", check_plan_approval)
     manager.register_validator("check_progress_log_exists", check_progress_log_exists)
     manager.register_validator("check_handoff_pr_link", check_handoff_pr_link)
+    manager.register_validator("check_handoff_beads_id", check_handoff_beads_id)
     manager.register_validator("check_todo_completion", check_todo_completion)
 
     # Run retrospective phase

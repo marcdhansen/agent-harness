@@ -311,6 +311,49 @@ def check_handoff_pr_link(*args) -> Tuple[bool, str]:
     return False, "No PR link found in debrief.md"
 
 
+def check_handoff_beads_id(*args) -> Tuple[bool, str]:
+    """Verify Beads issue ID in debrief.md."""
+    # Try to get active issue ID from branch or bd
+    issue_id = None
+    try:
+        branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
+        if branch.startswith("agent/"):
+            issue_id = branch.replace("agent/", "")
+    except Exception:
+        pass
+
+    if not issue_id:
+        try:
+            import json as json_lib
+            result = subprocess.run(["bd", "list", "-s", "in_progress", "--json"], capture_output=True, text=True)
+            if result.returncode == 0:
+                issues = json_lib.loads(result.stdout)
+                if issues:
+                    issue_id = issues[0]["id"]
+        except Exception:
+            pass
+
+    if not issue_id:
+        return False, "Could not determine active Beads issue ID"
+
+    brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
+    if brain_dir.exists():
+        session_dirs = sorted(
+            [d for d in brain_dir.iterdir() if d.is_dir()],
+            key=lambda x: x.stat().st_mtime,
+            reverse=True,
+        )[:1]
+        for d in session_dirs:
+            debrief = d / "debrief.md"
+            if debrief.exists():
+                content = debrief.read_text()
+                if issue_id in content:
+                    return True, f"Beads issue ID '{issue_id}' found in debrief.md"
+                return False, f"Beads issue ID '{issue_id}' not found in debrief.md"
+
+    return False, "No debrief.md found in recent session to verify Beads ID"
+
+
 def check_handoff_compliance(*args) -> Tuple[bool, str]:
     """Verify handoff documentation."""
     # Placeholder for more complex handoff verification
