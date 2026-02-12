@@ -31,4 +31,4 @@
 
 ## Approval
 
-- [x] Approved for execution
+(Approval cleared)
