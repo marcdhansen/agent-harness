@@ -1,34 +1,22 @@
 {
-  "session_name": "Show Next Task & Review PR #13",
+  "session_name": "agent-harness-3fd",
   "outcome": "SUCCESS",
-  "duration_hours": 0.5,
-  "success_metrics": {
-    "PR Merged": true,
-    "Issue Closed": "agent-harness-7ko",
-    "Orchestrator Hardened": true
-  },
+  "session_duration_hours": 1.5,
+  "success_metrics": [
+    "Hardened branch-issue coupling and started state in Orchestrator.",
+    "Hardened get_active_issue_id to prevent fallback to 'bd ready' on feature branches.",
+    "Added mandatory branch-issue coupling check to Turbo Mode initialization.",
+    "Created and passed automated tests for coupling hardening."
+  ],
   "technical_learnings": [
-    "New validators (drift, pr sync) accurately detect protocol violations.",
-    "Beads database permission issues can block automated sync/flush hooks.",
-    "Manual conflict resolution is necessary when merging long-running feature branches."
+    "Identified that get_active_issue_id had a fallback to bd ready which allowed unrelated issues to satisfy coupling checks on feature branches.",
+    "Feature branches must be strictly coupled to their namesake issue.",
+    "Turbo Mode initialization was bypassing coupling checks, allowing work on misnamed branches."
   ],
   "challenges_overcome": [
-    "Resolved complex merge conflicts in finalization.json and task.md.",
-    "Bypassed failing git hooks to sync critical Beads metadata."
+    "Navigated complex validator dependencies and logic holes."
   ],
-  "protocol_issues": [
-    "Beads database permission denied (lstat .beads/beads.db: operation not permitted)."
-  ],
-  "process_improvements": [
-    "Automate beads.db permission recovery or fallback to JSONL-only mode."
-  ],
-  "refactoring_candidates": [
-    "Modularize beads sync to handle permission errors more gracefully.",
-    "Enhance Orchestrator to detect stale beads locks."
-  ],
-  "quantitative_results": {
-    "Commits Merged": 1,
-    "Issues Resolved": 1,
-    "New Task Recommendations": 3
-  }
+  "refactoring_candidates": [],
+  "protocol_issues": [],
+  "process_improvements": []
 }
