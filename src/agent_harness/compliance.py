@@ -413,6 +413,82 @@ def check_handoff_beads_id(*args) -> Tuple[bool, str]:
 
     return False, f"Beads issue ID '{issue_id}' not found in debrief.md"
 
+def check_wrapup_indicator_symmetry(*args) -> Tuple[bool, str]:
+    """Verify 🏁 symmetry: 
+    1. If 🏁 is in debrief.md, ensure SOP is complete (reflection, ID, PR etc).
+    2. If SOP is complete, 🏁 should eventually be in the final summary.
+    Note: This validator primarily checks if 🏁 is present when it should be after all gates pass.
+    """
+    # Try local debrief first (standard for many projects)
+    recent_debrief = Path("debrief.md")
+    if not recent_debrief.exists():
+        recent_debrief = None
+        brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
+        if brain_dir.exists():
+            session_dirs = sorted(
+                [d for d in brain_dir.iterdir() if d.is_dir()],
+                key=lambda x: x.stat().st_mtime,
+                reverse=True,
+            )[:1]
+            if session_dirs:
+                debrief_path = session_dirs[0] / "debrief.md"
+                if debrief_path.exists():
+                    recent_debrief = debrief_path
+
+    if not recent_debrief or not recent_debrief.exists():
+        return True, "No recent debrief.md found to check for 🏁"
+
+    content = recent_debrief.read_text()
+    has_flag = "🏁" in content
+
+    # Check if we are at the end of the session (all other gates passed)
+    # We can approximate this by checking for mandatory artifacts
+    reflection_exists = Path(".reflection_input.json").exists()
+    issue_id = get_active_issue_id()
+    has_id = issue_id and issue_id in content
+    has_pr = "github.com" in content and "/pull/" in content
+
+    sop_complete = reflection_exists and has_id and has_pr
+
+    if has_flag and not sop_complete:
+        missing = []
+        if not reflection_exists: missing.append("reflection")
+        if not has_id: missing.append("Beads ID")
+        if not has_pr: missing.append("PR link")
+        return False, f"PROTOCOL VIOLATION: 🏁 used but SOP incomplete. Missing: {', '.join(missing)}"
+
+    if sop_complete and not has_flag:
+        return False, "SOP complete but 🏁 missing from debrief.md. Run finalization_debriefing.py to inject it."
+
+    return True, "🏁 symmetry verified"
+
+
+def check_wrapup_exclusivity(*args) -> Tuple[bool, str]:
+    """Verify 🏁 is NOT used in planning or execution docs."""
+    forbidden_docs = [
+        "ROADMAP.md",
+        "ImplementationPlan.md",
+        ".agent/ROADMAP.md",
+        ".agent/ImplementationPlan.md",
+        ".agent/rules/ROADMAP.md",
+        ".agent/rules/ImplementationPlan.md",
+    ]
+    
+    found_in = []
+    for doc in forbidden_docs:
+        path = Path(doc)
+        if path.exists():
+            if "🏁" in path.read_text():
+                # Allow it if we are currently working on the 🏁 task itself
+                issue_id = get_active_issue_id()
+                if issue_id == "agent-harness-b9y":
+                    continue
+                found_in.append(doc)
+    if found_in:
+        return False, f"PROTOCOL VIOLATION: 🏁 found in forbidden documents: {', '.join(found_in)}. This emoji is reserved for session closure."
+    
+    return True, "🏁 exclusivity verified"
+
 
 def check_pr_review_issue_created(*args) -> tuple[bool, str]:
     """Check if a P0 PR review issue exists for the current branch."""

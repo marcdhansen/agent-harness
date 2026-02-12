@@ -23,6 +23,8 @@ from agent_harness.compliance import (
     check_child_pr_linkage,
     check_workspace_cleanup,
     check_handoff_pr_verification,
+    check_wrapup_indicator_symmetry,
+    check_wrapup_exclusivity,
 )
 
 
@@ -93,6 +95,8 @@ def retrospective_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_handoff_pr_link", check_handoff_pr_link)
     manager.register_validator("check_handoff_beads_id", check_handoff_beads_id)
     manager.register_validator("check_todo_completion", check_todo_completion)
+    manager.register_validator("check_wrapup_indicator_symmetry", check_wrapup_indicator_symmetry)
+    manager.register_validator("check_wrapup_exclusivity", check_wrapup_exclusivity)
 
     # Run retrospective phase
     passed, blockers, warnings = manager.run_phase("retrospective")
