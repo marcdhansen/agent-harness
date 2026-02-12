@@ -10,8 +10,9 @@ from agent_harness.compliance import (
     check_pr_decomposition_closure,
     check_child_pr_linkage,
     check_workspace_cleanup,
-    get_active_issue_id
+    get_active_issue_id,
 )
+
 
 class TestPortedValidators(unittest.TestCase):
     @patch("agent_harness.compliance.check_tool_available")
@@ -25,14 +26,16 @@ class TestPortedValidators(unittest.TestCase):
 
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = json.dumps([
-            {
-                "number": 1,
-                "title": "[issue-123] Test PR",
-                "headRefName": "agent/issue-123",
-                "url": "https://github.com/PR1"
-            }
-        ])
+        mock_result.stdout = json.dumps(
+            [
+                {
+                    "number": 1,
+                    "title": "[issue-123] Test PR",
+                    "headRefName": "agent/issue-123",
+                    "url": "https://github.com/PR1",
+                }
+            ]
+        )
         mock_run.return_value = mock_result
 
         passed, msg = check_handoff_pr_verification()
@@ -50,10 +53,9 @@ class TestPortedValidators(unittest.TestCase):
 
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = json.dumps({
-            "title": "[issue-123] Implementation",
-            "body": "Fixes issue-123"
-        })
+        mock_result.stdout = json.dumps(
+            {"title": "[issue-123] Implementation", "body": "Fixes issue-123"}
+        )
         mock_run.return_value = mock_result
 
         passed, msg = check_beads_pr_sync()
@@ -88,7 +90,7 @@ class TestPortedValidators(unittest.TestCase):
     def test_pr_exists_success(self, mock_run, mock_branch, mock_tool):
         mock_tool.return_value = True
         mock_branch.return_value = ("agent/issue-123", True)
-        
+
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = "https://github.com/pull/1"
@@ -97,6 +99,7 @@ class TestPortedValidators(unittest.TestCase):
         passed, msg = check_pr_exists()
         self.assertTrue(passed)
         self.assertIn("PR found", msg)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -115,9 +115,7 @@ def check_tool_available(tool: str) -> bool:
 def get_active_issue_id() -> Optional[str]:
     """Identify the active beads issue ID strictly from branch name if on feature branch."""
     try:
-        branch = subprocess.check_output(
-            ["git", "branch", "--show-current"], text=True
-        ).strip()
+        branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
         is_feature = branch.startswith(("agent/", "feature/", "chore/"))
 
         # Strictly derive from branch name for feature branches
@@ -413,8 +411,9 @@ def check_handoff_beads_id(*args) -> Tuple[bool, str]:
 
     return False, f"Beads issue ID '{issue_id}' not found in debrief.md"
 
+
 def check_wrapup_indicator_symmetry(*args) -> Tuple[bool, str]:
-    """Verify 🏁 symmetry: 
+    """Verify 🏁 symmetry:
     1. If 🏁 is in debrief.md, ensure SOP is complete (reflection, ID, PR etc).
     2. If SOP is complete, 🏁 should eventually be in the final summary.
     Note: This validator primarily checks if 🏁 is present when it should be after all gates pass.
@@ -452,13 +451,22 @@ def check_wrapup_indicator_symmetry(*args) -> Tuple[bool, str]:
 
     if has_flag and not sop_complete:
         missing = []
-        if not reflection_exists: missing.append("reflection")
-        if not has_id: missing.append("Beads ID")
-        if not has_pr: missing.append("PR link")
-        return False, f"PROTOCOL VIOLATION: 🏁 used but SOP incomplete. Missing: {', '.join(missing)}"
+        if not reflection_exists:
+            missing.append("reflection")
+        if not has_id:
+            missing.append("Beads ID")
+        if not has_pr:
+            missing.append("PR link")
+        return (
+            False,
+            f"PROTOCOL VIOLATION: 🏁 used but SOP incomplete. Missing: {', '.join(missing)}",
+        )
 
     if sop_complete and not has_flag:
-        return False, "SOP complete but 🏁 missing from debrief.md. Run finalization_debriefing.py to inject it."
+        return (
+            False,
+            "SOP complete but 🏁 missing from debrief.md. Run finalization_debriefing.py to inject it.",
+        )
 
     return True, "🏁 symmetry verified"
 
@@ -473,7 +481,7 @@ def check_wrapup_exclusivity(*args) -> Tuple[bool, str]:
         ".agent/rules/ROADMAP.md",
         ".agent/rules/ImplementationPlan.md",
     ]
-    
+
     found_in = []
     for doc in forbidden_docs:
         path = Path(doc)
@@ -485,8 +493,11 @@ def check_wrapup_exclusivity(*args) -> Tuple[bool, str]:
                     continue
                 found_in.append(doc)
     if found_in:
-        return False, f"PROTOCOL VIOLATION: 🏁 found in forbidden documents: {', '.join(found_in)}. This emoji is reserved for session closure."
-    
+        return (
+            False,
+            f"PROTOCOL VIOLATION: 🏁 found in forbidden documents: {', '.join(found_in)}. This emoji is reserved for session closure.",
+        )
+
     return True, "🏁 exclusivity verified"
 
 
@@ -652,7 +663,10 @@ def check_beads_pr_sync(*args) -> tuple[bool, str]:
         )
 
         if result.returncode != 0:
-            return False, "Could not find a PR for the current branch. Please run 'gh pr create --fill'."
+            return (
+                False,
+                "Could not find a PR for the current branch. Please run 'gh pr create --fill'.",
+            )
 
         pr_data = json.loads(result.stdout)
         title = pr_data.get("title", "")
@@ -661,10 +675,10 @@ def check_beads_pr_sync(*args) -> tuple[bool, str]:
         issue_id_lower = issue_id.lower()
         if issue_id_lower in title.lower() or issue_id_lower in body.lower():
             return True, f"Beads issue '{issue_id}' properly synchronized with PR"
-        
+
         patterns = [f"[{issue_id}]", f"#{issue_id}", f"{issue_id}:"]
         if any(p.lower() in title.lower() or p.lower() in body.lower() for p in patterns):
-             return True, f"Beads issue '{issue_id}' properly synchronized with PR"
+            return True, f"Beads issue '{issue_id}' properly synchronized with PR"
 
         return (
             False,
@@ -679,51 +693,54 @@ def check_pr_decomposition_closure(*args) -> tuple[bool, str]:
     """Verify that decomposed PRs are properly closed per PR Response Protocol."""
     if not check_tool_available("bd") or not check_tool_available("gh"):
         return True, "beads or gh not available (skipping decomposition check)"
-    
+
     try:
         active_issue = get_active_issue_id()
         if not active_issue:
             return True, "No active issue (decomposition check not applicable)"
-        
+
         result = subprocess.run(
             ["bd", "show", active_issue],
             capture_output=True,
             text=True,
             timeout=10,
         )
-        
+
         if result.returncode != 0:
             return True, "Could not query issue details (skipping)"
-        
+
         output = result.stdout
         output_lower = output.lower()
         has_children = "part-of" in output_lower or "child" in output or "epic" in output
-        
+
         if not has_children:
             return True, "No child issues detected (not a decomposition)"
-        
+
         pr_pattern = r"PR #(\d+)|pull/(\d+)"
         pr_matches = re.findall(pr_pattern, output)
-        
+
         if not pr_matches:
             return True, "Parent issue with children but no original PR referenced"
-        
+
         pr_number = next((m[0] or m[1] for m in pr_matches if m[0] or m[1]), None)
-        
+
         if not pr_number:
             return True, "Could not extract PR number from issue"
-        
+
         pr_check = subprocess.run(
             ["gh", "pr", "view", pr_number, "--json", "state", "--jq", ".state"],
             capture_output=True,
             text=True,
             timeout=10,
         )
-        
+
         if pr_check.returncode == 0:
             pr_status = pr_check.stdout.strip()
             if pr_status == "CLOSED":
-                return True, f"Original PR #{pr_number} properly closed (decomposition protocol followed)"
+                return (
+                    True,
+                    f"Original PR #{pr_number} properly closed (decomposition protocol followed)",
+                )
             elif pr_status == "MERGED":
                 return True, f"Original PR #{pr_number} was merged (not decomposed)"
             else:
@@ -731,7 +748,7 @@ def check_pr_decomposition_closure(*args) -> tuple[bool, str]:
                     False,
                     f"PROTOCOL VIOLATION: Original PR #{pr_number} is still OPEN but child issues exist.",
                 )
-        
+
         return True, "Could not verify PR status (skipping)"
     except Exception as e:
         return True, f"Decomposition check error: {e}"
@@ -741,56 +758,54 @@ def check_child_pr_linkage(*args) -> tuple[bool, str]:
     """Validate that child PRs properly reference their parent Epic/issue per PR Response Protocol."""
     if not check_tool_available("bd") or not check_tool_available("gh"):
         return True, "beads or gh not available (skipping linkage check)"
-    
+
     try:
         active_issue = get_active_issue_id()
         if not active_issue:
             return True, "No active issue (linkage check not applicable)"
-        
+
         result = subprocess.run(
             ["bd", "show", active_issue],
             capture_output=True,
             text=True,
             timeout=10,
         )
-        
+
         if result.returncode != 0:
             return True, "Could not query issue details (skipping)"
-        
+
         parent_pattern = r"(?:part.?of|depends.?on|blocks?.?by)[\s:]+(\w+-[\w-]+)"
         parent_matches = re.findall(parent_pattern, result.stdout, re.IGNORECASE)
-        
+
         if not parent_matches:
             return True, "No parent issue detected (not a child PR)"
-        
+
         parent_id = parent_matches[0]
         branch, is_feature = check_branch_info()
         if not is_feature:
             return True, "Not on feature branch"
-        
+
         pr_check = subprocess.run(
             ["gh", "pr", "view", "--json", "body", "--jq", ".body"],
             capture_output=True,
             text=True,
             timeout=10,
         )
-        
+
         if pr_check.returncode != 0:
             return True, "No PR found for current branch"
-        
+
         pr_body = pr_check.stdout.lower()
         parent_mentioned = (
-            parent_id.lower() in pr_body or
-            "parent epic" in pr_body or
-            "part of epic" in pr_body
+            parent_id.lower() in pr_body or "parent epic" in pr_body or "part of epic" in pr_body
         )
-        
+
         if not parent_mentioned:
             return (
                 False,
                 f"PROTOCOL VIOLATION: Child PR does not reference parent issue '{parent_id}'.",
             )
-        
+
         return True, f"Child PR properly references parent issue '{parent_id}'"
     except Exception as e:
         return True, f"Linkage check error: {e}"
@@ -810,15 +825,25 @@ def check_workspace_cleanup(*args) -> tuple[bool, str]:
             return True, "Could not check for untracked files (skipping)"
 
         untracked = result.stdout.strip().split("\n") if result.stdout.strip() else []
-        allowed_in_root = ["task.md", "debrief.md", ".reflection_input.json", "ImplementationPlan.md", "ROADMAP.md"]
-        
+        allowed_in_root = [
+            "task.md",
+            "debrief.md",
+            ".reflection_input.json",
+            "ImplementationPlan.md",
+            "ROADMAP.md",
+        ]
+
         drift = [f for f in untracked if f not in allowed_in_root and not f.startswith("tests/")]
-        
+
         if not drift:
             return True, "Workspace clean of temporary artifact drift"
 
-        suspicious = [f for f in drift if any(pattern in f for pattern in [".bak", ".tmp", "copy", "old", "test_"])]
-        
+        suspicious = [
+            f
+            for f in drift
+            if any(pattern in f for pattern in [".bak", ".tmp", "copy", "old", "test_"])
+        ]
+
         if suspicious:
             return (
                 False,
