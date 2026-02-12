@@ -18,7 +18,7 @@ The current Finalization protocol requires branches to be clean and pushed but d
 
 ## Tasks
 
-- [ ] Create `branch_pruner.py` module (or add to `git_validator.py`)
-- [ ] Implement `prune_merged_branches` function
-- [ ] Add `check_local_branch_cleanup` validator to Orchestrator
-- [ ] Verify with tests
+- [x] Create `branch_pruner.py` module (or add to `git_validator.py`)
+- [x] Implement `prune_merged_branches` function
+- [x] Add `check_local_branch_cleanup` validator to Orchestrator
+- [x] Verify with tests
