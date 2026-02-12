@@ -45,6 +45,12 @@
                     "validator": "check_beads_issue"
                 },
                 {
+                    "id": "branch_issue_coupling",
+                    "description": "Verify branch ID matches 'started' Beads issue",
+                    "type": "BLOCKER",
+                    "validator": "check_branch_issue_coupling"
+                },
+                {
                     "id": "sop_simplification",
                     "description": "Verify SOP simplification check",
                     "type": "WARNING",
