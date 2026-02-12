@@ -49,6 +49,36 @@
                     "validator": "check_beads_pr_sync"
                 },
                 {
+                    "id": "pr_review_issue",
+                    "description": "Verify P0 PR review issue exists",
+                    "type": "BLOCKER",
+                    "validator": "check_pr_review_issue_created"
+                },
+                {
+                    "id": "pr_exists",
+                    "description": "Verify Pull Request exists for code changes",
+                    "type": "BLOCKER",
+                    "validator": "check_pr_exists"
+                },
+                {
+                    "id": "todo_completion",
+                    "description": "Verify all tasks in task.md are completed",
+                    "type": "BLOCKER",
+                    "validator": "check_todo_completion"
+                },
+                {
+                    "id": "pr_decomposition",
+                    "description": "Verify decomposed PRs are properly closed",
+                    "type": "BLOCKER",
+                    "validator": "check_pr_decomposition_closure"
+                },
+                {
+                    "id": "child_pr_linkage",
+                    "description": "Verify child PRs reference parent issues",
+                    "type": "BLOCKER",
+                    "validator": "check_child_pr_linkage"
+                },
+                {
                     "id": "workspace_cleanup",
                     "description": "Verify the workspace is clean of temporary artifacts",
                     "type": "BLOCKER",

@@ -1,7 +1,5 @@
 # Task: Prevent Orphaned Pull Requests and Workspace Drift [agent-harness-niy]
 
-## Status: COMPLETED
-
 ## Objectives
 
 - [x] Implement `check_handoff_pr_verification` validator
@@ -12,10 +10,11 @@
 
 ## Approval
 
-[ ] Protocol Compliance Verified
+[x] Protocol Compliance Verified
 
 ## Implementation Details
 
 - Added validators to `finalization_validator.py`
 - Updated JSON checklists in `.agent/rules/checklists/`
 - Verified with unit tests in `tests/test_handoff_pr_verification.py`
+- Resolved merge conflicts with `main` (harness-4cq).
