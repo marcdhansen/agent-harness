@@ -10,7 +10,7 @@
 
 ## Approval
 
-[x] Protocol Compliance Verified
+[ ] Protocol Compliance Verified
 
 ## Implementation Details
 
