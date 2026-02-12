@@ -45,6 +45,30 @@
                     "validator": "check_beads_issue"
                 },
                 {
+                    "id": "branch_issue_coupling",
+                    "description": "Verify branch ID matches 'started' Beads issue",
+                    "type": "BLOCKER",
+                    "validator": "check_branch_issue_coupling"
+                },
+                {
+                    "id": "sop_simplification",
+                    "description": "Verify SOP simplification check",
+                    "type": "WARNING",
+                    "validator": "check_sop_simplification"
+                },
+                {
+                    "id": "hook_integrity",
+                    "description": "Verify git hook integrity",
+                    "type": "BLOCKER",
+                    "validator": "check_hook_integrity"
+                },
+                {
+                    "id": "progress_log",
+                    "description": "Verify progress log exists",
+                    "type": "WARNING",
+                    "validator": "check_progress_log_exists"
+                },
+                {
                     "id": "plan_approval",
                     "description": "Verify plan approval is fresh (<4h)",
                     "type": "BLOCKER",

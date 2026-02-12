@@ -44,6 +44,12 @@
                     "description": "Verify TDD compliance",
                     "type": "BLOCKER",
                     "validator": "validate_tdd_compliance"
+                },
+                {
+                    "id": "progress_log_execution",
+                    "description": "Verify progress log exists",
+                    "type": "WARNING",
+                    "validator": "check_progress_log_exists"
                 }
             ]
         }

@@ -15,13 +15,13 @@
                 {
                     "id": "debriefing_invoked",
                     "description": "Verify mission debriefing file exists",
-                    "type": "WARNING",
+                    "type": "BLOCKER",
                     "validator": "check_debriefing_invoked"
                 },
                 {
                     "id": "plan_cleared",
                     "description": "Verify plan approval marker is cleared in task.md",
-                    "type": "WARNING",
+                    "type": "BLOCKER",
                     "validator": "check_plan_approval",
                     "args": [
                         "invert"
@@ -30,7 +30,7 @@
                 {
                     "id": "reflector_synthesis",
                     "description": "Verify reflector synthesis in progress log",
-                    "type": "WARNING",
+                    "type": "BLOCKER",
                     "validator": "check_progress_log_exists"
                 },
                 {
