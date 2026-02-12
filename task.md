@@ -1,10 +1,20 @@
-# Task: Mandate SOP Protocol Verification (agent-harness-4cq)
+# Task: Prevent Orphaned Pull Requests and Workspace Drift [agent-harness-niy]
 
-## Objective
-Update SOP to require protocol compliance verification in session summaries.
+## Objectives
 
-## Plan
-- [x] Update docs/phases/06_finalization.md
-- [x] Update SOP_COMPLIANCE_CHECKLIST.md
-- [x] Update retrospective/SKILL.md
+- [x] Implement `check_handoff_pr_verification` validator
+- [x] Implement `check_beads_pr_sync` validator
+- [x] Implement `check_workspace_cleanup` validator
+- [x] Update SOP documentation for PR supersession
+- [x] Integrate all gates into Orchestrator finalization
 
+## Approval
+
+[x] Protocol Compliance Verified
+
+## Implementation Details
+
+- Added validators to `finalization_validator.py`
+- Updated JSON checklists in `.agent/rules/checklists/`
+- Verified with unit tests in `tests/test_handoff_pr_verification.py`
+- Resolved merge conflicts with `main` (harness-4cq).
