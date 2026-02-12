@@ -7,6 +7,12 @@
             "description": "Final verification: repo should be clean after PR merge.",
             "checks": [
                 {
+                    "id": "prune_merged_branches",
+                    "description": "Prune local branches already merged into main",
+                    "type": "BLOCKER",
+                    "validator": "prune_local_branches"
+                },
+                {
                     "id": "branch_main",
                     "description": "Verify on main/master branch",
                     "type": "BLOCKER",
