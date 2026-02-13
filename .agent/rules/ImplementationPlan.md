@@ -1,67 +1,57 @@
-# 📋 Implementation Plan: agent-harness-2rn - Standardize structured JSON for reflection capture
+# 📋 Implementation Plan: agent-harness-gf6 - Implement bd note alias and automated debrief-to-beads comment injection
 
 ## Objective
 
-Standardize session reflections into a machine-readable `.reflection_input.json` file. This enables automated validation, consistent meta-learning, and reduces cognitive load during the retrospective phase.
+Reduce cognitive load and improve documentation by automating the synchronization of session debriefs to Beads issue comments and providing a 'bd note' alias for manual notes.
 
 ## Proposed Changes
 
-### 1. Schema Definition (`.agent/rules/reflection.schema.json`)
+### 1. New Validator: `inject_debrief_to_beads` (`src/agent_harness/compliance.py`)
 
-- Create a JSON Schema that defines the structure of the reflection.
-- **Fields**:
-  - `session_name` (string)
-  - `outcome` (string: SUCCESS|PARTIAL|FAILURE)
-  - `duration_hours` (number)
-  - `success_metrics` (object/map)
-  - `technical_learnings` (array of strings)
-  - `challenges_overcome` (array of strings)
-  - `protocol_issues` (array of strings)
-  - `process_improvements` (array of strings)
-  - `quantitative_results` (object/map)
+- Implement a new validator `inject_debrief_to_beads` that:
+  - Identifies the active Beads issue ID.
+  - Reads the most recent `debrief.md` from the brain directory.
+  - Extracts the "Implementation Details" or the entire content if preferred.
+  - Sanitizes the content for shell execution.
+  - Checks if the debrief has already been injected (to avoid duplicates).
+  - Calls `bd comments add <issue-id> -f <path-to-debrief>` or pipes the content if a temporary file is needed.
+- **Improved Messaging**: Confirm injection or explain why it was skipped.
 
-### 2. Reflect Skill Enhancement (`~/.gemini/antigravity/skills/reflect/enhanced_reflection.py`)
+### 2. Update Checklist (`.agent/rules/checklists/retrospective.json`)
 
-- Update `EnhancedReflection._save_reflection` to also write the single session's data to `.reflection_input.json` in the workspace root.
-- Ensure the output format matches the defined schema.
-- Add basic validation logic if possible.
+- Add `inject_debrief_to_beads` as a step in the Retrospective phase.
+- Mark it as a `WARNING` or `BLOCKER` depending on desired strictness (initially `WARNING` recommended to ensure it doesn't block finalization if `bd` fails).
 
-### 3. Orchestrator Enhancement (`~/.gemini/antigravity/skills/Orchestrator/scripts/check_protocol_compliance.py`)
+### 3. Register Validator (`src/agent_harness/nodes/finalization.py`)
 
-- **Update `check_reflection_invoked()`**:
-  - Change `reflection_paths` to include `.reflection_input.json`.
-  - Add logic to parse the JSON and verify mandatory fields exist.
-- **Improved Messaging**:
-  - If `.reflection_input.json` is missing, provide the command to generate it (`/reflect`).
+- Register the new validator in the `retrospective_node`.
 
-### 4. Testing (`tests/test_reflection_validation.py`)
+### 4. Provide Alias (Documentation)
 
-- Implement test cases for:
-  - Missing `.reflection_input.json`.
-  - Malformed/Invalid JSON.
-  - Valid JSON passing the check.
+- Since `bd` is a binary, we will document the alias for user shells: `alias bd-note='bd comments add'`.
+- Optionally, we could provide a wrapper script in `.agent/bin/bd-note` if persistent shell aliases are difficult to manage across different environments.
 
-### 5. SOP Documentation
+### 5. Testing (`tests/test_debrief_injection.py`)
 
-- Update `.agent/docs/SOP_COMPLIANCE_CHECKLIST.md` and `AGENTS.md` (if relevant) to include the new requirement.
+- Mock `bd show` and `bd comments add`.
+- Verify extraction logic from `debrief.md`.
+- Verify duplicate prevention logic.
 
 ## Verification
 
 ### Automated
 
-- `pytest tests/test_reflection_validation.py`
-- `check_protocol_compliance.py --finalize` in a test environment.
+- `pytest tests/test_debrief_injection.py`
 
 ### Manual
 
-- Run `/reflect` and verify `.reflection_input.json` is created and populated.
-- Delete the file and verify `check_protocol_compliance.py --finalize` blocks.
+- Run a session, complete work, and run finalization.
+- Verify the debrief content appears in `bd show <issue-id>`.
 
 ## Blast Radius
 
-- **Medium**: Affects the Finalization phase. If the JSON parsing fails or the schema is too restrictive, it could block PR creation.
-- **Dependencies**: Depends on the existence of the Orchestrator and Reflect skills in their respective locations.
+- **Low**: This is an additive feature in the Retrospective phase. If it fails, it should ideally just warn rather than block the entire session closure (if configured as a warning).
 
 ## Rollback Plan
 
-- Revert changes to `check_protocol_compliance.py` and `enhanced_reflection.py`.
+- Remove the validator from `retrospective.json` and `finalization.py`.
