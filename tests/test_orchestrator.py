@@ -168,6 +168,8 @@ class TestOrchestratorExecution(unittest.TestCase):
 class TestOrchestratorFinalization(unittest.TestCase):
     """Test the run_finalization function."""
 
+    @patch("check_protocol_compliance.run_phase_from_json")
+    @patch("check_protocol_compliance.prune_local_branches")
     @patch("check_protocol_compliance.check_git_status")
     @patch("check_protocol_compliance.check_branch_info")
     @patch("check_protocol_compliance.check_sop_simplification")
@@ -194,8 +196,12 @@ class TestOrchestratorFinalization(unittest.TestCase):
         mock_simplify,
         mock_branch,
         mock_git,
+        mock_prune,
+        mock_json_phase,
     ):
         """Test successful finalization."""
+        mock_json_phase.return_value = (False, [], [])
+        mock_prune.return_value = (True, "No stale branches")
         mock_git.return_value = (True, "Working directory clean")
         mock_branch.return_value = ("agent-harness/test", True)
         mock_simplify.return_value = (True, "No simplifications")
@@ -217,6 +223,62 @@ class TestOrchestratorFinalization(unittest.TestCase):
     def test_run_finalization_blocked_by_git(self, mock_git):
         """Test finalization blocked by uncommitted changes."""
         mock_git.return_value = (False, "Uncommitted changes: M file.py")
+
+        with patch("builtins.print"):
+            result = orchestrator.run_finalization()
+        self.assertFalse(result)
+
+    @patch("check_protocol_compliance.run_phase_from_json")
+    @patch("check_protocol_compliance.prune_local_branches")
+    @patch("check_protocol_compliance.check_git_status")
+    @patch("check_protocol_compliance.check_branch_info")
+    @patch("check_protocol_compliance.check_sop_simplification")
+    @patch("check_protocol_compliance.check_handoff_compliance")
+    @patch("check_protocol_compliance.validate_atomic_commits")
+    @patch("check_protocol_compliance.check_reflection_invoked")
+    @patch("check_protocol_compliance.check_linked_repositories")
+    @patch("check_protocol_compliance.check_code_review_status")
+    @patch("check_protocol_compliance.check_pr_review_issue_created")
+    @patch("check_protocol_compliance.check_todo_completion")
+    @patch("check_protocol_compliance.check_hook_integrity")
+    @patch("check_protocol_compliance.check_pr_exists")
+    @patch("check_protocol_compliance.check_beads_pr_sync")
+    def test_run_finalization_blocked_by_stale_branches(
+        self,
+        mock_beads,
+        mock_pr,
+        mock_hook,
+        mock_todo,
+        mock_pr_review,
+        mock_code_review,
+        mock_linked,
+        mock_reflect,
+        mock_atomic,
+        mock_handoff,
+        mock_simplify,
+        mock_branch,
+        mock_git,
+        mock_prune,
+        mock_json_phase,
+    ):
+        """Test finalization blocked by stale branches."""
+        mock_json_phase.return_value = (False, [], [])
+        mock_git.return_value = (True, "Working directory clean")
+        mock_branch.return_value = ("feature/test", True)
+        mock_simplify.return_value = (True, "No simplifications")
+        mock_handoff.return_value = (True, "No handoffs")
+        mock_atomic.return_value = (True, [])
+        mock_reflect.return_value = (True, "Reflection captured")
+        mock_linked.return_value = (True, [])
+        mock_code_review.return_value = (True, "Code Review passed")
+        mock_pr_review.return_value = (True, "PR review issue found")
+        mock_todo.return_value = (True, "All tasks completed")
+        mock_hook.return_value = (True, "Hooks intact")
+        mock_pr.return_value = (True, "PR found")
+        mock_beads.return_value = (True, "PR Sync OK")
+        
+        # Simulating stale branches
+        mock_prune.return_value = (False, "Stale branches detected: agent/old-feature")
 
         with patch("builtins.print"):
             result = orchestrator.run_finalization()
