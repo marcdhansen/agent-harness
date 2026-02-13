@@ -956,3 +956,82 @@ def validate_tdd_compliance(*args) -> Tuple[bool, str]:
         )
     except Exception:
         return True, "Could not verify TDD (repo state or history issues)"
+
+
+def inject_debrief_to_beads(*args) -> Tuple[bool, str]:
+    """Inject content from debrief.md into Beads issue comments."""
+    issue_id = get_active_issue_id()
+    if not issue_id:
+        return True, "No active issue identified (skipping injection)"
+
+    brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
+    if not brain_dir.exists():
+        return True, "No brain directory found (skipping injection)"
+
+    session_dirs = sorted(
+        [d for d in brain_dir.iterdir() if d.is_dir()],
+        key=lambda x: x.stat().st_mtime,
+        reverse=True,
+    )[:1]
+
+    if not session_dirs:
+        return True, "No recent session found (skipping injection)"
+
+    debrief_path = session_dirs[0] / "debrief.md"
+    if not debrief_path.exists():
+        return True, "No debrief.md found in recent session (skipping injection)"
+
+    content = debrief_path.read_text()
+    
+    # Check if we should only inject 'Implementation Details'
+    if "## Implementation Details" in content:
+        parts = content.split("## Implementation Details")
+        if len(parts) > 1:
+            # Take everything after Implementation Details, up to the next header or end
+            injection_content = parts[1].split("\n#")[0].strip()
+        else:
+            injection_content = content.strip()
+    else:
+        injection_content = content.strip()
+
+    if not injection_content:
+        return True, "No content found in debrief.md to inject"
+
+    # Check for duplicates by querying beads
+    try:
+        show_res = subprocess.run(
+            ["bd", "show", issue_id],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if show_res.returncode == 0:
+            # Use a smaller snippet to check for existence to avoid match failures due to truncation or headers
+            snippet = injection_content[:200]
+            if snippet in show_res.stdout:
+                return True, f"Debrief content already exists in issue '{issue_id}' comments."
+    except Exception:
+        pass
+
+    # Inject using bd comments add
+    try:
+        # We'll use a temporary file to avoid shell expansion issues with large content
+        temp_debrief = Path("/tmp/debrief_to_inject.md")
+        temp_debrief.write_text(injection_content)
+        
+        result = subprocess.run(
+            ["bd", "comments", "add", issue_id, "-f", str(temp_debrief)],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        
+        if temp_debrief.exists():
+            temp_debrief.unlink()
+            
+        if result.returncode == 0:
+            return True, f"Injected debrief content into issue '{issue_id}'"
+        else:
+            return False, f"Failed to inject debrief: {result.stderr.strip()}"
+    except Exception as e:
+        return False, f"Error during debrief injection: {e}"

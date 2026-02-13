@@ -62,6 +62,12 @@
                     "description": "Verify 🏁 is not misused in planning/execution documents",
                     "type": "BLOCKER",
                     "validator": "check_wrapup_exclusivity"
+                },
+                {
+                    "id": "inject_debrief_to_beads",
+                    "description": "Inject debrief implementation details into Beads issue comments",
+                    "type": "WARNING",
+                    "validator": "inject_debrief_to_beads"
                 }
             ]
         }
