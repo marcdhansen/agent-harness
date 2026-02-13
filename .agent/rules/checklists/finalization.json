@@ -49,10 +49,16 @@
                     "validator": "check_beads_pr_sync"
                 },
                 {
-                    "id": "pr_review_issue",
-                    "description": "Verify P0 PR review issue exists",
+                    "id": "issue_closure_gate",
+                    "description": "Verify issue is 'in_review' if PR is still open",
                     "type": "BLOCKER",
-                    "validator": "check_pr_review_issue_created"
+                    "validator": "check_issue_closure_gate"
+                },
+                {
+                    "id": "no_separate_review_issues",
+                    "description": "Verify NO separate Beads issues exist for code review",
+                    "type": "BLOCKER",
+                    "validator": "check_no_separate_review_issues"
                 },
                 {
                     "id": "pr_exists",
@@ -83,6 +89,12 @@
                     "description": "Verify the workspace is clean of temporary artifacts",
                     "type": "BLOCKER",
                     "validator": "check_workspace_cleanup"
+                },
+                {
+                    "id": "beads_id_handoff",
+                    "description": "Verify Beads issue ID in debrief.md",
+                    "type": "BLOCKER",
+                    "validator": "check_handoff_beads_id"
                 }
             ]
         }

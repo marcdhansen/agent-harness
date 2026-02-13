@@ -13,7 +13,7 @@ bd comments add <id> "note" # Add closure note
 bd sync               # Sync with git
 ```
 
-## Landing the Plane (Session Completion)
+## Session Finalization (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
@@ -21,7 +21,7 @@ bd sync               # Sync with git
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
+3. **Update issue status** - If an outstanding Pull Request exists, set status to `in_review`. Do NOT close until the PR is merged into `main`.
 4. **PUSH TO REMOTE** - This is MANDATORY:
 
    ```bash
@@ -33,7 +33,7 @@ bd sync               # Sync with git
 
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
+7. **Hand off** - Provide context for next session in `debrief.md`. **MANDATORY**: Include the Beads Issue ID in the `debrief.md` AND in the final summary shown to the user.
 
 **CRITICAL RULES:**
 

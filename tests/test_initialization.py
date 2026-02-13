@@ -75,7 +75,7 @@ class TestInitializationValidation(unittest.TestCase):
             self.assertTrue(passed)
             self.assertEqual(len(missing), 0)
 
-    @patch("check_protocol_compliance.Path")
+    @patch("validators.git_validator.Path")
     def test_check_workspace_integrity_failure(self, mock_path):
         """Test workspace integrity check failure."""
         # Mock some files missing

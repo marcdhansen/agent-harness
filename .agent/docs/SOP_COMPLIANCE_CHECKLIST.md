@@ -55,6 +55,7 @@ Strategic learning, session closure, and handoff.
 - [ ] **Verify plan approval marker is cleared in task.md** (Validator: `check_plan_approval`)
 - [ ] **Verify reflector synthesis in progress log** (Validator: `check_progress_log_exists`)
 - [ ] **Verify GitHub PR link in debrief.md** (Validator: `check_handoff_pr_link`)
+- [ ] **Verify Beads issue ID in debrief.md** (Validator: `check_handoff_beads_id`)
 - [ ] **Verify all tasks in task.md are completed** (Validator: `check_todo_completion`)
 
 ### Phase 7: Clean State Validation — MANDATORY

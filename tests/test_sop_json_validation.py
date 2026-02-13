@@ -18,7 +18,7 @@ from agent_harness.compliance import (
 @pytest.fixture
 def checklist_manager():
     project_root = Path.cwd()
-    checklist_dir = project_root / ".agent/rules/checklists"
+    checklist_dir = project_root / ".agent-harness/rules/checklists"
     manager = ChecklistManager(checklist_dir)
 
     # Register all validators
