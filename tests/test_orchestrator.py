@@ -247,7 +247,16 @@ class TestOrchestratorRetrospective(unittest.TestCase):
     @patch("check_protocol_compliance.check_wrapup_indicator_symmetry")
     @patch("check_protocol_compliance.check_wrapup_exclusivity")
     def test_run_retrospective_success(
-        self, mock_exclusivity, mock_symmetry, mock_handoff_id, mock_handoff_pr, mock_todo, mock_log, mock_approval, mock_debrief, mock_reflect
+        self,
+        mock_exclusivity,
+        mock_symmetry,
+        mock_handoff_id,
+        mock_handoff_pr,
+        mock_todo,
+        mock_log,
+        mock_approval,
+        mock_debrief,
+        mock_reflect,
     ):
         """Test successful retrospective."""
         mock_reflect.return_value = (True, "Reflection captured")
@@ -284,7 +293,9 @@ class TestOrchestratorCleanState(unittest.TestCase):
     @patch("subprocess.run")
     @patch("check_protocol_compliance.prune_local_branches")
     @patch("check_protocol_compliance.check_workspace_cleanup")
-    def test_run_clean_state_success(self, mock_cleanup, mock_prune, mock_run, mock_path, mock_git, mock_branch):
+    def test_run_clean_state_success(
+        self, mock_cleanup, mock_prune, mock_run, mock_path, mock_git, mock_branch
+    ):
         """Test successful clean state check."""
         mock_branch.return_value = ("main", False)  # On main, not feature
         mock_git.return_value = (True, "Clean")

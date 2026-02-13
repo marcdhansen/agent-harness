@@ -94,7 +94,6 @@ class TestBeadsIDValidator(unittest.TestCase):
         self.assertTrue(passed)
         self.assertIn("agent-harness-999", msg)
 
-
     @patch("agent_harness.compliance.subprocess.check_output")
     @patch("agent_harness.compliance.Path.home")
     def test_hardening_only_checks_latest_session(self, mock_home, mock_check_output):
@@ -128,7 +127,7 @@ class TestBeadsIDValidator(unittest.TestCase):
         brain_dir.iterdir.return_value = [older_session, latest_session]
 
         passed, msg = check_handoff_beads_id()
-        
+
         # It should fail because the latest session doesn't have the ID
         self.assertFalse(passed)
         self.assertIn("not found in debrief.md", msg)

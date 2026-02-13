@@ -537,7 +537,11 @@ def check_no_separate_review_issues(*args) -> tuple[bool, str]:
         for line in lines:
             line_lower = line.lower()
             # If the issue title contains "PR Review" or "Code Review"
-            if "pr review" in line_lower or "pr-review" in line_lower or "code review" in line_lower:
+            if (
+                "pr review" in line_lower
+                or "pr-review" in line_lower
+                or "code review" in line_lower
+            ):
                 parts = line.split(":")
                 if parts:
                     issue_id = parts[0].strip()
@@ -685,7 +689,9 @@ def check_beads_pr_sync(*args) -> tuple[bool, str]:
 
         if not linked_in_pr:
             patterns = [f"[{issue_id}]", f"#{issue_id}", f"{issue_id}:"]
-            linked_in_pr = any(p.lower() in title.lower() or p.lower() in body.lower() for p in patterns)
+            linked_in_pr = any(
+                p.lower() in title.lower() or p.lower() in body.lower() for p in patterns
+            )
 
         if not linked_in_pr:
             return (
@@ -710,7 +716,7 @@ def check_beads_pr_sync(*args) -> tuple[bool, str]:
             return (
                 False,
                 f"PROTOCOL VIOLATION: Beads issue '{issue_id}' must contain a comment with the PR URL. "
-                f"Run: bd comments add {issue_id} \"PR: {pr_url}\"",
+                f'Run: bd comments add {issue_id} "PR: {pr_url}"',
             )
 
         return True, f"Beads issue '{issue_id}' properly synchronized with PR"
