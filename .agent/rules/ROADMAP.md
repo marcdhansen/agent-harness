@@ -5,6 +5,7 @@
 - [x] Create standardized PR template (`agent-harness-qzo`)
 - [x] Define PR workflow rules and handoff protocol (`agent-harness-1wj`)
 - [x] Enforce Rebase-Squash Strategy (`agent-harness-v0o`)
+- [x] Harden Branch-Issue Coupling and Started State (`agent-harness-3fd`)
 
 ## Phase 2: Automation
 
