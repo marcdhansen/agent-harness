@@ -88,7 +88,7 @@ class TestAtomicCommitValidation:
     @patch("check_protocol_compliance.subprocess.run")
     def test_single_atomic_commit_passes(self, mock_run, mock_branch):
         """Test that a single atomic commit with valid format passes all checks."""
-        mock_branch.return_value = ("agent/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         self._setup_mocks(mock_run, base_branch="origin/main", commit_count=1)
 
         is_valid, errors = validate_atomic_commits()
@@ -100,7 +100,7 @@ class TestAtomicCommitValidation:
     @patch("check_protocol_compliance.subprocess.run")
     def test_multiple_commits_blocked(self, mock_run, mock_branch):
         """Test that multiple commits are detected and blocked."""
-        mock_branch.return_value = ("agent/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         self._setup_mocks(mock_run, base_branch="origin/main", commit_count=3)
 
         is_valid, errors = validate_atomic_commits()
@@ -112,7 +112,7 @@ class TestAtomicCommitValidation:
     @patch("check_protocol_compliance.subprocess.run")
     def test_merge_commit_blocked(self, mock_run, mock_branch):
         """Test that merge commits are detected and blocked."""
-        mock_branch.return_value = ("agent/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         self._setup_mocks(
             mock_run,
             base_branch="origin/main",
@@ -132,7 +132,7 @@ class TestAtomicCommitValidation:
     @patch("check_protocol_compliance.subprocess.run")
     def test_missing_issue_id_blocked(self, mock_run, mock_branch):
         """Test that commits without Beads issue ID are blocked."""
-        mock_branch.return_value = ("agent/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         self._setup_mocks(mock_run, commit_count=1, commit_msg="feat(auth): no issue id")
 
         is_valid, errors = validate_atomic_commits()
@@ -144,7 +144,7 @@ class TestAtomicCommitValidation:
     @patch("check_protocol_compliance.subprocess.run")
     def test_valid_commit_message_format(self, mock_run, mock_branch):
         """Test that valid conventional commit format is accepted."""
-        mock_branch.return_value = ("agent/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         self._setup_mocks(
             mock_run, commit_count=1, commit_msg="chore(docs): update README [agent-harness-v0o]"
         )
@@ -158,7 +158,7 @@ class TestAtomicCommitValidation:
     @patch("check_protocol_compliance.subprocess.run")
     def test_invalid_commit_message_format(self, mock_run, mock_branch):
         """Test that invalid commit message format is rejected."""
-        mock_branch.return_value = ("agent/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         self._setup_mocks(
             mock_run, commit_count=1, commit_msg="Added some changes [agent-harness-v0o]"
         )

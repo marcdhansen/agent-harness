@@ -26,7 +26,7 @@ class TestHandoffPRVerification(unittest.TestCase):
         """Test success when matching PR is found."""
         mock_tool.return_value = True
         mock_id.return_value = "issue-123"
-        mock_branch.return_value = ("agent/issue-123", True)
+        mock_branch.return_value = ("agent-harness/issue-123", True)
 
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -35,7 +35,7 @@ class TestHandoffPRVerification(unittest.TestCase):
                 {
                     "number": 1,
                     "title": "[issue-123] Test PR",
-                    "headRefName": "agent/issue-123",
+                    "headRefName": "agent-harness/issue-123",
                     "url": "https://github.com/PR1",
                 }
             ]
@@ -86,7 +86,7 @@ class TestHandoffPRVerification(unittest.TestCase):
         """Test failure when PR branch doesn't match current branch."""
         mock_tool.return_value = True
         mock_id.return_value = "issue-123"
-        mock_branch.return_value = ("agent/issue-123-NEW", True)
+        mock_branch.return_value = ("agent-harness/issue-123-NEW", True)
 
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -95,7 +95,7 @@ class TestHandoffPRVerification(unittest.TestCase):
                 {
                     "number": 1,
                     "title": "[issue-123] Test PR",
-                    "headRefName": "agent/issue-123-OLD",
+                    "headRefName": "agent-harness/issue-123-OLD",
                     "url": "https://github.com/PR1",
                 }
             ]
@@ -133,7 +133,7 @@ class TestBeadsPRSync(unittest.TestCase):
         """Test success when issue ID is in PR title."""
         mock_tool.return_value = True
         mock_id.return_value = "issue-123"
-        mock_branch.return_value = ("feature/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
 
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -156,7 +156,7 @@ class TestBeadsPRSync(unittest.TestCase):
         """Test failure when issue ID is missing from PR."""
         mock_tool.return_value = True
         mock_id.return_value = "issue-123"
-        mock_branch.return_value = ("feature/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
 
         mock_result = MagicMock()
         mock_result.returncode = 0

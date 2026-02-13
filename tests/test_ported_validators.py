@@ -5,7 +5,7 @@ from pathlib import Path
 from agent_harness.compliance import (
     check_handoff_pr_verification,
     check_beads_pr_sync,
-    check_pr_review_issue_created,
+    check_no_separate_review_issues,
     check_pr_exists,
     check_pr_decomposition_closure,
     check_child_pr_linkage,
@@ -22,7 +22,7 @@ class TestPortedValidators(unittest.TestCase):
     def test_handoff_pr_verification_success(self, mock_branch, mock_run, mock_id, mock_tool):
         mock_tool.return_value = True
         mock_id.return_value = "issue-123"
-        mock_branch.return_value = ("agent/issue-123", True)
+        mock_branch.return_value = ("agent-harness/issue-123", True)
 
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -31,7 +31,7 @@ class TestPortedValidators(unittest.TestCase):
                 {
                     "number": 1,
                     "title": "[issue-123] Test PR",
-                    "headRefName": "agent/issue-123",
+                    "headRefName": "agent-harness/issue-123",
                     "url": "https://github.com/PR1",
                 }
             ]
@@ -49,7 +49,7 @@ class TestPortedValidators(unittest.TestCase):
     def test_beads_pr_sync_success(self, mock_branch, mock_run, mock_id, mock_tool):
         mock_tool.return_value = True
         mock_id.return_value = "issue-123"
-        mock_branch.return_value = ("agent/issue-123", True)
+        mock_branch.return_value = ("agent-harness/issue-123", True)
 
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -89,7 +89,7 @@ class TestPortedValidators(unittest.TestCase):
     @patch("agent_harness.compliance.subprocess.run")
     def test_pr_exists_success(self, mock_run, mock_branch, mock_tool):
         mock_tool.return_value = True
-        mock_branch.return_value = ("agent/issue-123", True)
+        mock_branch.return_value = ("agent-harness/issue-123", True)
 
         mock_result = MagicMock()
         mock_result.returncode = 0

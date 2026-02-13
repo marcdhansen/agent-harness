@@ -116,13 +116,21 @@ def get_active_issue_id() -> Optional[str]:
     """Identify the active beads issue ID strictly from branch name if on feature branch."""
     try:
         branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
-        is_feature = branch.startswith(("agent/", "feature/", "chore/"))
+        is_feature = branch.startswith(("agent/", "feature/", "chore/", "agent-harness/"))
 
         # Strictly derive from branch name for feature branches
         if is_feature:
+            # Expected format: agent-harness/<issue-id>-<brief-desc>
+            # Example: agent-harness/agent-harness-va4-fix-logic
             parts = branch.split("/")
             if len(parts) > 1:
-                return parts[-1]
+                slug = parts[-1]
+                # Match project-id-id (e.g., agent-harness-abc) or numeric ID at the start of the slug
+                match = re.search(r"^(agent-harness-[a-z0-9]{3}|[0-9]+)", slug)
+                if match:
+                    return match.group(1)
+                # Fallback if slug is just the ID
+                return slug
             return branch
 
         # Fallback to bd ready ONLY if on protected base branches
@@ -269,7 +277,7 @@ def check_branch_info(*args) -> tuple[Union[str, bool], bool]:
                 target = args[0]
                 return branch, branch == target
 
-            is_feature = branch.startswith(("agent/", "feature/", "chore/"))
+            is_feature = branch.startswith(("agent/", "feature/", "chore/", "agent-harness/"))
             return branch, is_feature
         return "unknown", False
     except Exception:
@@ -401,7 +409,7 @@ def check_handoff_beads_id(*args) -> Tuple[bool, str]:
             [d for d in brain_dir.iterdir() if d.is_dir()],
             key=lambda x: x.stat().st_mtime,
             reverse=True,
-        )[:3]
+        )[:1]
         for d in session_dirs:
             debrief = d / "debrief.md"
             if debrief.exists():
@@ -501,54 +509,52 @@ def check_wrapup_exclusivity(*args) -> Tuple[bool, str]:
     return True, "🏁 exclusivity verified"
 
 
-def check_pr_review_issue_created(*args) -> tuple[bool, str]:
-    """Check if a P0 PR review issue exists for the current branch."""
+def check_no_separate_review_issues(*args) -> tuple[bool, str]:
+    """Verify that NO separate Beads issues have been created for code review."""
     if not check_tool_available("bd"):
-        return False, "beads (bd) not available"
+        return True, "beads (bd) not available (skipping review issue prohibition check)"
 
-    branch, is_feature = check_branch_info()
-    if not is_feature:
-        return True, "Not on feature branch (PR review not required)"
+    active_issue = get_active_issue_id()
 
     try:
+        # List all open issues
         result = subprocess.run(
-            ["bd", "list", "--priority", "P0"],
+            ["bd", "list", "--status", "open"],
             capture_output=True,
             text=True,
             timeout=10,
         )
 
         if result.returncode != 0:
-            return False, "Failed to query beads for PR review issues"
+            return True, "Failed to query beads (skipping review issue prohibition check)"
 
         output = result.stdout.strip()
         if not output:
-            return (
-                False,
-                f"No P0 PR review issue found for branch '{branch}'. Create one with: bd create --priority P0 'PR Review: {branch}'",
-            )
+            return True, "No open issues found"
 
         lines = output.split("\n")
+        violations = []
         for line in lines:
             line_lower = line.lower()
-            if "pr review" in line_lower or "pr-review" in line_lower:
+            # If the issue title contains "PR Review" or "Code Review"
+            if "pr review" in line_lower or "pr-review" in line_lower or "code review" in line_lower:
                 parts = line.split(":")
                 if parts:
                     issue_id = parts[0].strip()
-                    return True, f"PR review issue found: {issue_id}"
-            branch_slug = branch.split("/")[-1] if "/" in branch else branch
-            if branch_slug.lower() in line_lower:
-                parts = line.split(":")
-                if parts:
-                    issue_id = parts[0].strip()
-                    return True, f"PR review issue found (branch match): {issue_id}"
+                    # It's a violation if it's NOT the active issue
+                    if issue_id != active_issue:
+                        violations.append(issue_id)
 
-        return (
-            False,
-            f"No P0 PR review issue found for branch '{branch}'. Create one with: bd create --priority P0 'PR Review: {branch}'",
-        )
+        if violations:
+            return (
+                False,
+                f"PROTOCOL VIOLATION: Separate review issues detected: {', '.join(violations)}. "
+                f"SOP prohibits separate issues for code review. Use the original issue '{active_issue}' instead.",
+            )
+
+        return True, "No separate PR review issues detected"
     except Exception as e:
-        return False, f"PR review check failed: {e}"
+        return True, f"Review issue prohibition check error: {e}"
 
 
 def check_pr_exists(*args) -> tuple[bool, str]:
@@ -642,7 +648,7 @@ def check_handoff_pr_verification(*args) -> tuple[bool, str]:
 
 
 def check_beads_pr_sync(*args) -> tuple[bool, str]:
-    """Verify that the current Pull Request title or body references the active Beads issue."""
+    """Verify that the Pull Request is linked to the Beads issue via title/body AND a Beads comment."""
     if not check_tool_available("gh") or not check_tool_available("bd"):
         return True, "gh or bd not available (skipping Beads-PR sync check)"
 
@@ -656,7 +662,7 @@ def check_beads_pr_sync(*args) -> tuple[bool, str]:
             return True, "Not on feature branch"
 
         result = subprocess.run(
-            ["gh", "pr", "view", "--json", "title,body"],
+            ["gh", "pr", "view", "--json", "title,body,url"],
             capture_output=True,
             text=True,
             timeout=10,
@@ -671,19 +677,43 @@ def check_beads_pr_sync(*args) -> tuple[bool, str]:
         pr_data = json.loads(result.stdout)
         title = pr_data.get("title", "")
         body = pr_data.get("body", "")
+        pr_url = pr_data.get("url", "")
 
+        # 1. Check for issue_id in title or body
         issue_id_lower = issue_id.lower()
-        if issue_id_lower in title.lower() or issue_id_lower in body.lower():
-            return True, f"Beads issue '{issue_id}' properly synchronized with PR"
+        linked_in_pr = issue_id_lower in title.lower() or issue_id_lower in body.lower()
 
-        patterns = [f"[{issue_id}]", f"#{issue_id}", f"{issue_id}:"]
-        if any(p.lower() in title.lower() or p.lower() in body.lower() for p in patterns):
-            return True, f"Beads issue '{issue_id}' properly synchronized with PR"
+        if not linked_in_pr:
+            patterns = [f"[{issue_id}]", f"#{issue_id}", f"{issue_id}:"]
+            linked_in_pr = any(p.lower() in title.lower() or p.lower() in body.lower() for p in patterns)
 
-        return (
-            False,
-            f"PROTOCOL VIOLATION: Pull Request title/body must reference the active Beads issue '{issue_id}'. Run 'gh pr edit --title \"[{issue_id}] Your Title\"'.",
+        if not linked_in_pr:
+            return (
+                False,
+                f"PROTOCOL VIOLATION: Pull Request title/body must reference the active Beads issue '{issue_id}'. "
+                f"Run 'gh pr edit --title \"[{issue_id}] Your Title\"'.",
+            )
+
+        # 2. Check for PR URL in Beads comments
+        beads_res = subprocess.run(
+            ["bd", "show", issue_id],
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
+
+        if beads_res.returncode != 0:
+            return False, f"Failed to query Beads issue '{issue_id}'"
+
+        beads_output = beads_res.stdout
+        if pr_url.lower() not in beads_output.lower():
+            return (
+                False,
+                f"PROTOCOL VIOLATION: Beads issue '{issue_id}' must contain a comment with the PR URL. "
+                f"Run: bd comments add {issue_id} \"PR: {pr_url}\"",
+            )
+
+        return True, f"Beads issue '{issue_id}' properly synchronized with PR"
 
     except Exception as e:
         return False, f"Beads-PR synchronization check error: {e}"

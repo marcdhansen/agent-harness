@@ -17,7 +17,7 @@ from agent_harness.compliance import (
     check_handoff_beads_id,
     check_todo_completion,
     check_beads_pr_sync,
-    check_pr_review_issue_created,
+    check_no_separate_review_issues,
     check_pr_exists,
     check_pr_decomposition_closure,
     check_child_pr_linkage,
@@ -45,7 +45,7 @@ def finalization_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_handoff_compliance", check_handoff_compliance)
     manager.register_validator("check_handoff_beads_id", check_handoff_beads_id)
     manager.register_validator("check_beads_pr_sync", check_beads_pr_sync)
-    manager.register_validator("check_pr_review_issue_created", check_pr_review_issue_created)
+    manager.register_validator("check_no_separate_review_issues", check_no_separate_review_issues)
     manager.register_validator("check_pr_exists", check_pr_exists)
     manager.register_validator("check_todo_completion", check_todo_completion)
     manager.register_validator("check_pr_decomposition_closure", check_pr_decomposition_closure)

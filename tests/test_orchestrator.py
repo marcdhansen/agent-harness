@@ -40,7 +40,7 @@ class TestOrchestratorGitStatus(unittest.TestCase):
         """Test git status when only metadata files are changed."""
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = " M README.md\n M .agent/task.md"
+        mock_result.stdout = " M README.md\n M .agent-harness/task.md"
         mock_run.return_value = mock_result
 
         passed, msg = orchestrator.check_git_status(turbo=True)
@@ -81,10 +81,14 @@ class TestOrchestratorInitialization(unittest.TestCase):
 
     @patch("check_protocol_compliance.check_tool_available")
     @patch("check_protocol_compliance.check_git_status")
-    def test_run_turbo_initialization_success(self, mock_git, mock_tool):
+    @patch("check_protocol_compliance.check_sop_infrastructure_changes")
+    @patch("check_protocol_compliance.check_branch_issue_coupling")
+    def test_run_turbo_initialization_success(self, mock_coupling, mock_sop, mock_git, mock_tool):
         """Test successful Turbo initialization."""
         mock_tool.return_value = True
         mock_git.return_value = (True, "Working directory clean")
+        mock_sop.return_value = (False, "No SOP changes")
+        mock_coupling.return_value = (True, "Coupling OK")
 
         with patch("builtins.print"):
             result = orchestrator.run_turbo_initialization()
@@ -115,7 +119,7 @@ class TestOrchestratorExecution(unittest.TestCase):
         self, mock_path, mock_tdd, mock_approval, mock_git, mock_beads, mock_branch
     ):
         """Test successful execution phase validation."""
-        mock_branch.return_value = ("feature/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         mock_beads.return_value = (True, "Issues ready: 1")
         mock_git.return_value = (False, "Work in progress")  # IFO expects changes
         mock_approval.return_value = (True, "Plan approved")
@@ -172,7 +176,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
     @patch("check_protocol_compliance.check_reflection_invoked")
     @patch("check_protocol_compliance.check_linked_repositories")
     @patch("check_protocol_compliance.check_code_review_status")
-    @patch("check_protocol_compliance.check_pr_review_issue_created")
+    @patch("check_protocol_compliance.check_no_separate_review_issues")
     @patch("check_protocol_compliance.check_todo_completion")
     @patch("check_protocol_compliance.check_hook_integrity")
     @patch("check_protocol_compliance.check_pr_exists")
@@ -193,7 +197,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
     ):
         """Test successful finalization."""
         mock_git.return_value = (True, "Working directory clean")
-        mock_branch.return_value = ("feature/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         mock_simplify.return_value = (True, "No simplifications")
         mock_handoff.return_value = (True, "No handoffs")
         mock_atomic.return_value = (True, [])
@@ -239,8 +243,11 @@ class TestOrchestratorRetrospective(unittest.TestCase):
     @patch("check_protocol_compliance.check_progress_log_exists")
     @patch("check_protocol_compliance.check_todo_completion")
     @patch("check_protocol_compliance.check_handoff_pr_link")
+    @patch("check_protocol_compliance.check_handoff_beads_id")
+    @patch("check_protocol_compliance.check_wrapup_indicator_symmetry")
+    @patch("check_protocol_compliance.check_wrapup_exclusivity")
     def test_run_retrospective_success(
-        self, mock_handoff_pr, mock_todo, mock_log, mock_approval, mock_debrief, mock_reflect
+        self, mock_exclusivity, mock_symmetry, mock_handoff_id, mock_handoff_pr, mock_todo, mock_log, mock_approval, mock_debrief, mock_reflect
     ):
         """Test successful retrospective."""
         mock_reflect.return_value = (True, "Reflection captured")
@@ -249,6 +256,9 @@ class TestOrchestratorRetrospective(unittest.TestCase):
         mock_log.return_value = (True, "Log exists")
         mock_todo.return_value = (True, "Tasks complete")
         mock_handoff_pr.return_value = (True, "PR link found")
+        mock_handoff_id.return_value = (True, "ID found")
+        mock_symmetry.return_value = (True, "Symmetry OK")
+        mock_exclusivity.return_value = (True, "Exclusivity OK")
 
         # Mock reflector synthesis in log
         with patch("check_protocol_compliance.get_active_issue_id") as mock_id:
@@ -272,12 +282,16 @@ class TestOrchestratorCleanState(unittest.TestCase):
     @patch("check_protocol_compliance.check_git_status")
     @patch("check_protocol_compliance.Path")
     @patch("subprocess.run")
-    def test_run_clean_state_success(self, mock_run, mock_path, mock_git, mock_branch):
+    @patch("check_protocol_compliance.prune_local_branches")
+    @patch("check_protocol_compliance.check_workspace_cleanup")
+    def test_run_clean_state_success(self, mock_cleanup, mock_prune, mock_run, mock_path, mock_git, mock_branch):
         """Test successful clean state check."""
         mock_branch.return_value = ("main", False)  # On main, not feature
         mock_git.return_value = (True, "Clean")
         mock_run.return_value.stdout = "Your branch is up to date"
         mock_path.return_value.glob.return_value = []
+        mock_prune.return_value = (True, "Branches pruned")
+        mock_cleanup.return_value = (True, "Cleanup OK")
 
         with patch("builtins.print"):
             result = orchestrator.run_clean_state()
@@ -286,7 +300,7 @@ class TestOrchestratorCleanState(unittest.TestCase):
     def test_run_clean_state_fails_on_feature_branch(self):
         """Test clean state fails if still on feature branch."""
         with patch("check_protocol_compliance.check_branch_info") as mock_branch:
-            mock_branch.return_value = ("feature/test", True)
+            mock_branch.return_value = ("agent-harness/test", True)
             with patch("check_protocol_compliance.check_git_status") as mock_git:
                 mock_git.return_value = (True, "Clean")
                 with patch("subprocess.run") as mock_run:
@@ -305,13 +319,13 @@ class TestOrchestratorPRReview(unittest.TestCase):
     def test_check_pr_review_issue_exists(self, mock_run, mock_tool, mock_branch):
         """Test PR review issue found when P0 issue with 'PR Review' exists."""
         mock_tool.return_value = True
-        mock_branch.return_value = ("feature/test-branch", True)
+        mock_branch.return_value = ("agent-harness/test-branch", True)
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = "abc-123: PR Review: test-branch"
         mock_run.return_value = mock_result
 
-        passed, msg = orchestrator.check_pr_review_issue_created()
+        passed, msg = orchestrator.check_no_separate_review_issues()
         self.assertTrue(passed)
         self.assertIn("PR review issue found", msg)
 
@@ -321,13 +335,13 @@ class TestOrchestratorPRReview(unittest.TestCase):
     def test_check_pr_review_issue_missing(self, mock_run, mock_tool, mock_branch):
         """Test failure when no P0 PR review issue exists."""
         mock_tool.return_value = True
-        mock_branch.return_value = ("feature/new-feature", True)
+        mock_branch.return_value = ("agent-harness/new-feature", True)
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = ""  # No issues
         mock_run.return_value = mock_result
 
-        passed, msg = orchestrator.check_pr_review_issue_created()
+        passed, msg = orchestrator.check_no_separate_review_issues()
         self.assertFalse(passed)
         self.assertIn("No P0 PR review issue found", msg)
 
@@ -338,7 +352,7 @@ class TestOrchestratorPRReview(unittest.TestCase):
         mock_tool.return_value = True
         mock_branch.return_value = ("main", False)
 
-        passed, msg = orchestrator.check_pr_review_issue_created()
+        passed, msg = orchestrator.check_no_separate_review_issues()
         self.assertTrue(passed)
         self.assertIn("Not on feature branch", msg)
 
@@ -348,13 +362,13 @@ class TestOrchestratorPRReview(unittest.TestCase):
     def test_check_pr_review_issue_branch_match(self, mock_run, mock_tool, mock_branch):
         """Test PR review issue found by branch name match."""
         mock_tool.return_value = True
-        mock_branch.return_value = ("agent/agent-harness-xyz", True)
+        mock_branch.return_value = ("agent-harness/agent-harness-xyz", True)
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = "xyz-456: Some issue mentioning agent-harness-xyz"
         mock_run.return_value = mock_result
 
-        passed, msg = orchestrator.check_pr_review_issue_created()
+        passed, msg = orchestrator.check_no_separate_review_issues()
         self.assertTrue(passed)
         self.assertIn("branch match", msg)
 
@@ -368,7 +382,7 @@ class TestOrchestratorPRChecks(unittest.TestCase):
     def test_check_pr_exists_success(self, mock_run, mock_tool, mock_branch):
         """Test PR exists search success."""
         mock_tool.return_value = True
-        mock_branch.return_value = ("feature/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = "https://github.com/owner/repo/pull/1"
@@ -384,7 +398,7 @@ class TestOrchestratorPRChecks(unittest.TestCase):
     def test_check_pr_exists_missing(self, mock_run, mock_tool, mock_branch):
         """Test PR missing detection."""
         mock_tool.return_value = True
-        mock_branch.return_value = ("feature/test", True)
+        mock_branch.return_value = ("agent-harness/test", True)
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = ""

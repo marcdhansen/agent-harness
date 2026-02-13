@@ -33,7 +33,7 @@ bd sync               # Sync with git
 
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session in `debrief.md`. **MANDATORY**: Include the Beads Issue ID.
+7. **Hand off** - Provide context for next session in `debrief.md`. **MANDATORY**: Include the Beads Issue ID in the `debrief.md` AND in the final summary shown to the user.
 
 **CRITICAL RULES:**
 
