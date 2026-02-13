@@ -238,7 +238,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
     @patch("check_protocol_compliance.check_reflection_invoked")
     @patch("check_protocol_compliance.check_linked_repositories")
     @patch("check_protocol_compliance.check_code_review_status")
-    @patch("check_protocol_compliance.check_pr_review_issue_created")
+    @patch("check_protocol_compliance.check_no_separate_review_issues")
     @patch("check_protocol_compliance.check_todo_completion")
     @patch("check_protocol_compliance.check_hook_integrity")
     @patch("check_protocol_compliance.check_pr_exists")
@@ -299,6 +299,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
 class TestOrchestratorRetrospective(unittest.TestCase):
     """Test the run_retrospective function."""
 
+    @patch("check_protocol_compliance.run_phase_from_json")
     @patch("check_protocol_compliance.check_reflection_invoked")
     @patch("check_protocol_compliance.check_debriefing_invoked")
     @patch("check_protocol_compliance.check_plan_approval")
@@ -308,8 +309,10 @@ class TestOrchestratorRetrospective(unittest.TestCase):
     @patch("check_protocol_compliance.check_handoff_beads_id")
     @patch("check_protocol_compliance.check_wrapup_indicator_symmetry")
     @patch("check_protocol_compliance.check_wrapup_exclusivity")
+    @patch("check_protocol_compliance.check_git_status")
     def test_run_retrospective_success(
         self,
+        mock_git,
         mock_exclusivity,
         mock_symmetry,
         mock_handoff_id,
@@ -319,6 +322,7 @@ class TestOrchestratorRetrospective(unittest.TestCase):
         mock_approval,
         mock_debrief,
         mock_reflect,
+        mock_json_phase,
     ):
         """Test successful retrospective."""
         mock_reflect.return_value = (True, "Reflection captured")
@@ -332,15 +336,19 @@ class TestOrchestratorRetrospective(unittest.TestCase):
         mock_exclusivity.return_value = (True, "Exclusivity OK")
 
         # Mock reflector synthesis in log
-        with patch("check_protocol_compliance.get_active_issue_id") as mock_id:
-            mock_id.return_value = "test-id"
-            with patch("check_protocol_compliance.Path.home") as mock_home:
-                mock_log_file = MagicMock()
-                mock_log_file.read_text.return_value = "## Reflector Synthesis\nSome content"
-                mock_home.return_value.__truediv__.return_value.__truediv__.return_value = (
-                    mock_log_file
-                )
-
+        with patch("check_protocol_compliance.Path.home") as mock_home:
+            mock_log_file = MagicMock()
+            mock_log_file.read_text.return_value = "## Reflector Synthesis\nSome content"
+            # Path.home() / ".agent/progress-logs" / "test-id.md"
+            # 1. Path.home() / ".agent/progress-logs" -> returns h1
+            # 2. h1 / "test-id.md" -> returns mock_log_file
+            mock_home.return_value.__truediv__.return_value.__truediv__.return_value = mock_log_file
+            
+            # Mock get_active_issue_id to ensure it matches the path we mocked
+            with patch("check_protocol_compliance.get_active_issue_id") as mock_id:
+                mock_id.return_value = "test-id"
+                mock_git.return_value = (True, "Clean")
+                mock_json_phase.return_value = (False, [], [])
                 with patch("builtins.print"):
                     result = orchestrator.run_retrospective()
         self.assertTrue(result)
@@ -386,10 +394,11 @@ class TestOrchestratorCleanState(unittest.TestCase):
 class TestOrchestratorPRReview(unittest.TestCase):
     """Test the PR review issue validation function."""
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("subprocess.run")
-    def test_check_pr_review_issue_exists(self, mock_run, mock_tool, mock_branch):
+    @patch("validators.finalization_validator.get_active_issue_id")
+    @patch("validators.finalization_validator.check_tool_available")
+    @patch("validators.finalization_validator.check_branch_info")
+    @patch("validators.finalization_validator.subprocess.run")
+    def test_check_pr_review_issue_exists(self, mock_run, mock_branch, mock_tool, mock_id):
         """Test PR review issue found when P0 issue with 'PR Review' exists."""
         mock_tool.return_value = True
         mock_branch.return_value = ("agent-harness/test-branch", True)
@@ -397,15 +406,17 @@ class TestOrchestratorPRReview(unittest.TestCase):
         mock_result.returncode = 0
         mock_result.stdout = "abc-123: PR Review: test-branch"
         mock_run.return_value = mock_result
+        mock_id.return_value = "abc-123"
 
         passed, msg = orchestrator.check_no_separate_review_issues()
         self.assertTrue(passed)
-        self.assertIn("PR review issue found", msg)
+        self.assertIn("No separate PR review issues detected", msg)
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("subprocess.run")
-    def test_check_pr_review_issue_missing(self, mock_run, mock_tool, mock_branch):
+    @patch("validators.finalization_validator.get_active_issue_id")
+    @patch("validators.finalization_validator.check_tool_available")
+    @patch("validators.finalization_validator.check_branch_info")
+    @patch("validators.finalization_validator.subprocess.run")
+    def test_check_pr_review_issue_missing(self, mock_run, mock_branch, mock_tool, mock_id):
         """Test failure when no P0 PR review issue exists."""
         mock_tool.return_value = True
         mock_branch.return_value = ("agent-harness/new-feature", True)
@@ -413,13 +424,14 @@ class TestOrchestratorPRReview(unittest.TestCase):
         mock_result.returncode = 0
         mock_result.stdout = ""  # No issues
         mock_run.return_value = mock_result
+        mock_id.return_value = "new-feature"
 
         passed, msg = orchestrator.check_no_separate_review_issues()
-        self.assertFalse(passed)
-        self.assertIn("No P0 PR review issue found", msg)
+        self.assertTrue(passed)
+        self.assertIn("No open issues found", msg)
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_tool_available")
+    @patch("validators.finalization_validator.check_branch_info")
+    @patch("validators.finalization_validator.check_tool_available")
     def test_check_pr_review_not_needed_on_main(self, mock_tool, mock_branch):
         """Test PR review not required when on main branch."""
         mock_tool.return_value = True
@@ -429,10 +441,11 @@ class TestOrchestratorPRReview(unittest.TestCase):
         self.assertTrue(passed)
         self.assertIn("Not on feature branch", msg)
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("subprocess.run")
-    def test_check_pr_review_issue_branch_match(self, mock_run, mock_tool, mock_branch):
+    @patch("validators.finalization_validator.get_active_issue_id")
+    @patch("validators.finalization_validator.check_tool_available")
+    @patch("validators.finalization_validator.subprocess.run")
+    @patch("validators.finalization_validator.check_branch_info")
+    def test_check_pr_review_issue_branch_match(self, mock_branch, mock_run, mock_tool, mock_id):
         """Test PR review issue found by branch name match."""
         mock_tool.return_value = True
         mock_branch.return_value = ("agent-harness/agent-harness-xyz", True)
@@ -440,18 +453,19 @@ class TestOrchestratorPRReview(unittest.TestCase):
         mock_result.returncode = 0
         mock_result.stdout = "xyz-456: Some issue mentioning agent-harness-xyz"
         mock_run.return_value = mock_result
+        mock_id.return_value = "xyz-456"
 
         passed, msg = orchestrator.check_no_separate_review_issues()
         self.assertTrue(passed)
-        self.assertIn("branch match", msg)
+        self.assertIn("No separate PR review issues detected", msg)
 
 
 class TestOrchestratorPRChecks(unittest.TestCase):
     """Test the PR existance and handoff link checks."""
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("subprocess.run")
+    @patch("validators.finalization_validator.check_branch_info")
+    @patch("validators.finalization_validator.check_tool_available")
+    @patch("validators.finalization_validator.subprocess.run")
     def test_check_pr_exists_success(self, mock_run, mock_tool, mock_branch):
         """Test PR exists search success."""
         mock_tool.return_value = True
@@ -465,9 +479,9 @@ class TestOrchestratorPRChecks(unittest.TestCase):
         self.assertTrue(passed)
         self.assertIn("PR found", msg)
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("subprocess.run")
+    @patch("validators.finalization_validator.check_branch_info")
+    @patch("validators.finalization_validator.check_tool_available")
+    @patch("validators.finalization_validator.subprocess.run")
     def test_check_pr_exists_missing(self, mock_run, mock_tool, mock_branch):
         """Test PR missing detection."""
         mock_tool.return_value = True
