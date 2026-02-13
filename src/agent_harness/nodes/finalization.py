@@ -16,6 +16,15 @@ from agent_harness.compliance import (
     check_handoff_pr_link,
     check_handoff_beads_id,
     check_todo_completion,
+    check_beads_pr_sync,
+    check_no_separate_review_issues,
+    check_pr_exists,
+    check_pr_decomposition_closure,
+    check_child_pr_linkage,
+    check_workspace_cleanup,
+    check_handoff_pr_verification,
+    check_wrapup_indicator_symmetry,
+    check_wrapup_exclusivity,
 )
 
 
@@ -35,6 +44,14 @@ def finalization_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_reflection_invoked", check_reflection_invoked)
     manager.register_validator("check_handoff_compliance", check_handoff_compliance)
     manager.register_validator("check_handoff_beads_id", check_handoff_beads_id)
+    manager.register_validator("check_beads_pr_sync", check_beads_pr_sync)
+    manager.register_validator("check_no_separate_review_issues", check_no_separate_review_issues)
+    manager.register_validator("check_pr_exists", check_pr_exists)
+    manager.register_validator("check_todo_completion", check_todo_completion)
+    manager.register_validator("check_pr_decomposition_closure", check_pr_decomposition_closure)
+    manager.register_validator("check_child_pr_linkage", check_child_pr_linkage)
+    manager.register_validator("check_workspace_cleanup", check_workspace_cleanup)
+    manager.register_validator("check_handoff_pr_verification", check_handoff_pr_verification)
 
     # Run finalization phase
     passed, blockers, warnings = manager.run_phase("finalization")
@@ -78,6 +95,8 @@ def retrospective_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_handoff_pr_link", check_handoff_pr_link)
     manager.register_validator("check_handoff_beads_id", check_handoff_beads_id)
     manager.register_validator("check_todo_completion", check_todo_completion)
+    manager.register_validator("check_wrapup_indicator_symmetry", check_wrapup_indicator_symmetry)
+    manager.register_validator("check_wrapup_exclusivity", check_wrapup_exclusivity)
 
     # Run retrospective phase
     passed, blockers, warnings = manager.run_phase("retrospective")

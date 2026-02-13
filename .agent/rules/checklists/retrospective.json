@@ -50,6 +50,18 @@
                     "description": "Verify all tasks in task.md are completed",
                     "type": "BLOCKER",
                     "validator": "check_todo_completion"
+                },
+                {
+                    "id": "wrapup_indicator_symmetry",
+                    "description": "Verify 🏁 signal matches session completion state",
+                    "type": "BLOCKER",
+                    "validator": "check_wrapup_indicator_symmetry"
+                },
+                {
+                    "id": "wrapup_exclusivity",
+                    "description": "Verify 🏁 is not misused in planning/execution documents",
+                    "type": "BLOCKER",
+                    "validator": "check_wrapup_exclusivity"
                 }
             ]
         }
