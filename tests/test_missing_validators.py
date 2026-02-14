@@ -1,7 +1,8 @@
 import unittest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
-from agent_harness.compliance import check_rebase_status, check_closed_issue_branches
+from unittest.mock import MagicMock, patch
+
+from agent_harness.compliance import check_closed_issue_branches, check_rebase_status
+
 
 class TestMissingValidators(unittest.TestCase):
     @patch("pathlib.Path.exists")

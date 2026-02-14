@@ -28,7 +28,7 @@ def generate_checklist_md():
         if not json_path.exists():
             continue
 
-        with open(json_path, "r") as f:
+        with open(json_path) as f:
             data = json.load(f)
             if "phases" in data and data["phases"]:
                 phase = data["phases"][0]

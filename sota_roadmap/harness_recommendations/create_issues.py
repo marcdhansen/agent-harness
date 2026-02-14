@@ -12,9 +12,7 @@ Or set GITHUB_TOKEN environment variable:
 
 import argparse
 import os
-import re
 from pathlib import Path
-from typing import Dict, List
 
 try:
     import requests
@@ -23,7 +21,7 @@ except ImportError:
     exit(1)
 
 
-def parse_frontmatter(content: str) -> Dict[str, any]:
+def parse_frontmatter(content: str) -> dict[str, any]:
     """Extract YAML frontmatter from markdown."""
     frontmatter = {}
 
@@ -51,7 +49,7 @@ def parse_frontmatter(content: str) -> Dict[str, any]:
     return frontmatter
 
 
-def extract_issue_data(filepath: Path) -> Dict[str, any]:
+def extract_issue_data(filepath: Path) -> dict[str, any]:
     """Extract issue data from markdown file."""
     content = filepath.read_text()
 
@@ -73,7 +71,7 @@ def extract_issue_data(filepath: Path) -> Dict[str, any]:
     }
 
 
-def create_github_issue(repo: str, token: str, issue_data: Dict) -> Dict:
+def create_github_issue(repo: str, token: str, issue_data: dict) -> dict:
     """Create a GitHub issue via API."""
     url = f"https://api.github.com/repos/{repo}/issues"
 

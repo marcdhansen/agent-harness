@@ -1,7 +1,6 @@
-import unittest
 import subprocess
-import os
 import sys
+import unittest
 from pathlib import Path
 
 

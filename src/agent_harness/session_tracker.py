@@ -1,8 +1,8 @@
 import json
 import time
-from pathlib import Path
-from typing import Optional, Any
 from functools import wraps
+from pathlib import Path
+from typing import Any
 
 
 class SessionTracker:
@@ -60,7 +60,7 @@ class SessionTracker:
         except Exception:
             return False
 
-    def get_session(self) -> Optional[dict]:
+    def get_session(self) -> dict | None:
         """Get current session data."""
         if not self.has_active_session():
             return None

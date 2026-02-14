@@ -3,10 +3,11 @@ Test suite for Beads Issue Requirement SOP gate enforcement.
 # Gate: docs/sop/SOP.md (Lines: 13, 149)
 """
 
-import pytest
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add the Orchestrator script path
 orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"

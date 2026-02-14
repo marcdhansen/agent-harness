@@ -1,16 +1,13 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
 import sys
-import os
-import json
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Add orchestrator script path
 orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"
 sys.path.append(str(orchestrator_path))
 
-from validators.git_validator import get_active_issue_id
-from validators.plan_validator import check_beads_issue
+from validators.git_validator import get_active_issue_id  # noqa: E402
 
 
 class TestBranchIssueCouplingEnforcement(unittest.TestCase):

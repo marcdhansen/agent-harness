@@ -1,10 +1,9 @@
-import subprocess
-import re
 import json
 import os
-from datetime import datetime, timedelta
+import re
+import subprocess
+from datetime import datetime
 from pathlib import Path
-from typing import Tuple, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +21,7 @@ class ApprovalCheck(BaseModel):
     stale: bool = False
 
 
-def check_planning_docs(*args) -> Tuple[bool, str]:
+def check_planning_docs(*args) -> tuple[bool, str]:
     """Verify planning documents exist or have specific content."""
     project_root = Path.cwd()
     roadmap_locations = [
@@ -112,7 +111,7 @@ def check_tool_available(tool: str) -> bool:
         return False
 
 
-def get_active_issue_id() -> Optional[str]:
+def get_active_issue_id() -> str | None:
     """Identify the active beads issue ID strictly from branch name if on feature branch."""
     try:
         branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
@@ -157,7 +156,7 @@ def get_active_issue_id() -> Optional[str]:
     return None
 
 
-def check_tool_version(tool: str, min_version: str) -> Tuple[bool, str]:
+def check_tool_version(tool: str, min_version: str) -> tuple[bool, str]:
     """Check if a tool's version meets the minimum requirement."""
     try:
         version_flag = "version" if tool == "bd" else "--version"
@@ -182,7 +181,7 @@ def check_tool_version(tool: str, min_version: str) -> Tuple[bool, str]:
         return False, f"Error checking {tool} version: {e}"
 
 
-def check_workspace_integrity(*args) -> Tuple[bool, str]:
+def check_workspace_integrity(*args) -> tuple[bool, str]:
     """Verify workspace integrity by checking for mandatory directories and files."""
     if args:
         if args[0] == "task":
@@ -218,7 +217,7 @@ def check_workspace_integrity(*args) -> Tuple[bool, str]:
     return True, "Workspace integrity verified"
 
 
-def check_plan_approval(*args) -> Tuple[bool, str]:
+def check_plan_approval(*args) -> tuple[bool, str]:
     """Check if plan is approved. Supports 'invert' argument for retrospective."""
     max_hours = 4
     invert = False
@@ -248,7 +247,7 @@ def check_plan_approval(*args) -> Tuple[bool, str]:
     return passed, msg
 
 
-def check_beads_issue(*args) -> Tuple[bool, str]:
+def check_beads_issue(*args) -> tuple[bool, str]:
     """Verify an active Beads issue exists."""
     try:
         result = subprocess.run(["bd", "status"], capture_output=True, text=True)
@@ -259,7 +258,7 @@ def check_beads_issue(*args) -> Tuple[bool, str]:
         return False, f"Error checking Beads status: {e}"
 
 
-def check_branch_info(*args) -> tuple[Union[str, bool], bool]:
+def check_branch_info(*args) -> tuple[str | bool, bool]:
     """Get current branch and check if it's a feature branch.
     If args are provided, checks if the current branch matches the first arg.
     Matches Orchestrator signature.
@@ -284,7 +283,7 @@ def check_branch_info(*args) -> tuple[Union[str, bool], bool]:
         return "unknown", False
 
 
-def verify_branch_type(required_type: str = "feature") -> Tuple[bool, str]:
+def verify_branch_type(required_type: str = "feature") -> tuple[bool, str]:
     """Verify current branch info. Local utility."""
     try:
         branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
@@ -301,7 +300,7 @@ def verify_branch_type(required_type: str = "feature") -> Tuple[bool, str]:
         return False, f"Error checking branch: {e}"
 
 
-def check_git_status(*args, turbo: bool = False) -> Tuple[bool, str]:
+def check_git_status(*args, turbo: bool = False) -> tuple[bool, str]:
     """Verify working tree is clean and optionally synced with remote.
     
     In turbo mode, allows documentation and metadata changes without escalation.
@@ -359,7 +358,7 @@ def check_git_status(*args, turbo: bool = False) -> Tuple[bool, str]:
         return False, f"Error checking git status: {e}"
 
 
-def check_reflection_invoked(*args) -> Tuple[bool, str]:
+def check_reflection_invoked(*args) -> tuple[bool, str]:
     """Verify structured reflection was captured."""
     paths = [Path(".reflection_input.json")]
     brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
@@ -379,7 +378,7 @@ def check_reflection_invoked(*args) -> Tuple[bool, str]:
     return False, "No structured reflection found (.reflection_input.json). Run /reflect."
 
 
-def check_debriefing_invoked(*args) -> Tuple[bool, str]:
+def check_debriefing_invoked(*args) -> tuple[bool, str]:
     """Verify debriefing file exists."""
     brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
     if brain_dir.exists():
@@ -394,7 +393,7 @@ def check_debriefing_invoked(*args) -> Tuple[bool, str]:
     return False, "No debrief.md found in recent session."
 
 
-def check_todo_completion(*args) -> Tuple[bool, str]:
+def check_todo_completion(*args) -> tuple[bool, str]:
     """Verify all tasks in task.md are completed."""
     path = Path("task.md")
     if not path.exists():
@@ -409,7 +408,7 @@ def check_todo_completion(*args) -> Tuple[bool, str]:
     return True, "All tasks in task.md completed"
 
 
-def check_progress_log_exists(*args) -> Tuple[bool, str]:
+def check_progress_log_exists(*args) -> tuple[bool, str]:
     """Verify progress log exists."""
     progress_dir = Path(".agent/progress-logs")
     if progress_dir.exists() and any(progress_dir.iterdir()):
@@ -417,7 +416,7 @@ def check_progress_log_exists(*args) -> Tuple[bool, str]:
     return False, "No progress log found in .agent/progress-logs/"
 
 
-def check_handoff_pr_link(*args) -> Tuple[bool, str]:
+def check_handoff_pr_link(*args) -> tuple[bool, str]:
     """Verify PR link in debrief.md."""
     # Basic check for a URL-like string in debrief.md
     brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
@@ -436,7 +435,7 @@ def check_handoff_pr_link(*args) -> Tuple[bool, str]:
     return False, "No PR link found in debrief.md"
 
 
-def check_handoff_beads_id(*args) -> Tuple[bool, str]:
+def check_handoff_beads_id(*args) -> tuple[bool, str]:
     """Verify Beads issue ID in debrief.md."""
     issue_id = get_active_issue_id()
     if not issue_id:
@@ -476,7 +475,7 @@ def check_handoff_beads_id(*args) -> Tuple[bool, str]:
     )
 
 
-def check_protocol_compliance_reporting(*args) -> Tuple[bool, str]:
+def check_protocol_compliance_reporting(*args) -> tuple[bool, str]:
     """Verify protocol compliance reporting with Beads ID in session handoff/summary."""
     issue_id = get_active_issue_id()
     if not issue_id:
@@ -516,7 +515,7 @@ def check_protocol_compliance_reporting(*args) -> Tuple[bool, str]:
     )
 
 
-def check_wrapup_indicator_symmetry(*args) -> Tuple[bool, str]:
+def check_wrapup_indicator_symmetry(*args) -> tuple[bool, str]:
     """Verify 🏁 symmetry:
     1. If 🏁 is in debrief.md, ensure SOP is complete (reflection, ID, PR etc).
     2. If SOP is complete, 🏁 should eventually be in the final summary.
@@ -575,7 +574,7 @@ def check_wrapup_indicator_symmetry(*args) -> Tuple[bool, str]:
     return True, "🏁 symmetry verified"
 
 
-def check_wrapup_exclusivity(*args) -> Tuple[bool, str]:
+def check_wrapup_exclusivity(*args) -> tuple[bool, str]:
     """Verify 🏁 is NOT used in planning or execution docs."""
     forbidden_docs = [
         "ROADMAP.md",
@@ -688,7 +687,7 @@ def check_pr_exists(*args) -> tuple[bool, str]:
         return False, f"PR check failed: {e}"
 
 
-def check_harness_session(*args) -> Tuple[bool, str]:
+def check_harness_session(*args) -> tuple[bool, str]:
     """Verify that an active harness session exists."""
     from agent_harness.session_tracker import SessionTracker
 
@@ -699,7 +698,7 @@ def check_harness_session(*args) -> Tuple[bool, str]:
     return False, "No active harness session. Run: python check_protocol_compliance.py --init"
 
 
-def check_git_hooks_installed(*args) -> Tuple[bool, str]:
+def check_git_hooks_installed(*args) -> tuple[bool, str]:
     """Verify that the required git hooks are installed and up to date."""
     project_root = Path.cwd()
     hook_path = project_root / ".git" / "hooks" / "pre-commit"
@@ -720,10 +719,6 @@ def check_git_hooks_installed(*args) -> Tuple[bool, str]:
 
     return True, "Git hooks are installed and up to date"
 
-
-def check_hook_integrity(*args) -> Tuple[bool, str]:
-    """Alias for check_git_hooks_installed for compatibility with checklists."""
-    return check_git_hooks_installed(*args)
 
 
 def check_handoff_pr_verification(*args) -> tuple[bool, str]:
@@ -1029,7 +1024,7 @@ def check_workspace_cleanup(*args) -> tuple[bool, str]:
         return False, f"Workspace cleanup check error: {e}"
 
 
-def check_handoff_compliance(*args) -> Tuple[bool, str]:
+def check_handoff_compliance(*args) -> tuple[bool, str]:
     """Check if hand-off compliance verification passes for multi-phase implementations."""
     handoff_dir = Path(".agent/handoffs")
     verification_script = Path(".agent/scripts/verify_handoff_compliance.sh")
@@ -1061,7 +1056,7 @@ def check_handoff_compliance(*args) -> Tuple[bool, str]:
         return False, f"Hand-off verification error: {str(e)}"
 
 
-def validate_atomic_commits(*args) -> Tuple[bool, str]:
+def validate_atomic_commits(*args) -> tuple[bool, str]:
     """Validate atomic commit requirements."""
     try:
         msg = subprocess.check_output(["git", "log", "-1", "--pretty=%B"], text=True).strip()
@@ -1075,7 +1070,7 @@ def validate_atomic_commits(*args) -> Tuple[bool, str]:
         return False, f"Error validating commits: {e}"
 
 
-def validate_tdd_compliance(*args) -> Tuple[bool, str]:
+def validate_tdd_compliance(*args) -> tuple[bool, str]:
     """Verify TDD compliance."""
     try:
         # Check if any file in tests/ was modified in the last 5 commits
@@ -1092,7 +1087,7 @@ def validate_tdd_compliance(*args) -> Tuple[bool, str]:
         return True, "Could not verify TDD (repo state or history issues)"
 
 
-def inject_debrief_to_beads(*args) -> Tuple[bool, str]:
+def inject_debrief_to_beads(*args) -> tuple[bool, str]:
     """Inject content from debrief.md into Beads issue comments."""
     issue_id = get_active_issue_id()
     if not issue_id:
@@ -1168,7 +1163,7 @@ def inject_debrief_to_beads(*args) -> Tuple[bool, str]:
         return False, f"Error during debrief injection: {e}"
 
 
-def check_branch_issue_coupling(*args) -> Tuple[bool, str]:
+def check_branch_issue_coupling(*args) -> tuple[bool, str]:
     """Verify that the current branch ID matches a 'started' Beads issue and follows naming conventions."""
     branch, is_feature = check_branch_info()
 
@@ -1227,7 +1222,7 @@ def check_branch_issue_coupling(*args) -> Tuple[bool, str]:
         return False, f"Coupling check error: {e}"
 
 
-def check_sop_simplification(*args) -> Tuple[bool, str]:
+def check_sop_simplification(*args) -> tuple[bool, str]:
     """Check for SOP simplification proposals and their validation status."""
     proposal_patterns = [
         "*.md",
@@ -1271,7 +1266,7 @@ def check_sop_simplification(*args) -> Tuple[bool, str]:
     return True, "SOP simplification proposals processed"
 
 
-def check_hook_integrity(*args) -> Tuple[bool, str]:
+def check_hook_integrity(*args) -> tuple[bool, str]:
     """Check if git hooks are intact and not tampered with. Supports pre-commit and beads."""
     standard_hooks = {
         "pre-commit-framework": {
@@ -1364,7 +1359,7 @@ def check_hook_integrity(*args) -> Tuple[bool, str]:
     return True, f"All {detected_standard} hooks intact"
 
 
-def check_rebase_status(*args) -> Tuple[bool, str]:
+def check_rebase_status(*args) -> tuple[bool, str]:
     """Verify that there is no active rebase or merge in progress."""
     project_root = Path.cwd()
     rebase_merge = project_root / ".git" / "rebase-merge"
@@ -1376,7 +1371,7 @@ def check_rebase_status(*args) -> Tuple[bool, str]:
     return True, "No active rebase or merge detected"
 
 
-def check_closed_issue_branches(*args) -> Tuple[bool, str]:
+def check_closed_issue_branches(*args) -> tuple[bool, str]:
     """Verify no local branches exist for Beads issues that are already closed."""
     if not check_tool_available("bd"):
         return True, "Beads CLI not available, stale branch check skipped"

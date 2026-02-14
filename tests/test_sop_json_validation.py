@@ -1,17 +1,19 @@
-import pytest
 from pathlib import Path
+
+import pytest
+
 from agent_harness.checklists import ChecklistManager
 from agent_harness.compliance import (
+    check_beads_issue,
+    check_git_status,
+    check_handoff_compliance,
+    check_plan_approval,
+    check_planning_docs,
+    check_reflection_invoked,
     check_tool_version,
     check_workspace_integrity,
-    check_planning_docs,
-    check_beads_issue,
-    check_plan_approval,
-    check_git_status,
     validate_atomic_commits,
     validate_tdd_compliance,
-    check_reflection_invoked,
-    check_handoff_compliance,
 )
 
 

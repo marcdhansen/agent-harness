@@ -1,10 +1,9 @@
 """Tests for initialization validation in the Orchestrator."""
 
-import unittest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
 import sys
-import os
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Add the orchestrator script path to sys.path
 orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"

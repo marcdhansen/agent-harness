@@ -5,18 +5,16 @@ Provides session management, hook installation, and protocol compliance checks.
 """
 
 import argparse
-import json
-import os
 import shutil
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Add src to path for absolute imports if needed
 sys.path.append(str(Path(__file__).parent / "src"))
 
-from agent_harness.session_tracker import SessionTracker
 from agent_harness.compliance import get_active_issue_id
+from agent_harness.session_tracker import SessionTracker
 
 
 def install_hooks():
@@ -33,7 +31,7 @@ def install_hooks():
         print("❌ Error: Not a git repository or .git directory missing.")
         sys.exit(1)
 
-    print(f"🔧 Installing git pre-commit hook...")
+    print("🔧 Installing git pre-commit hook...")
     shutil.copy(hook_template, target_hook)
     target_hook.chmod(0o755)
     print("✅ Git pre-commit hook installed successfully.")

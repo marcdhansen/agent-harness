@@ -1,11 +1,9 @@
-import pytest
-import subprocess
 import json
-from pathlib import Path
+import subprocess
+
 from agent_harness.compliance import (
-    check_no_separate_review_issues,
     check_beads_pr_sync,
-    get_active_issue_id,
+    check_no_separate_review_issues,
 )
 
 

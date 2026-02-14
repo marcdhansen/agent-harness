@@ -3,11 +3,12 @@ Test suite for Plan Approval Freshness SOP gate enforcement.
 # Gate: docs/phases/02_initialization.md (Lines: 3, 103)
 """
 
-import pytest
 import sys
 import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add the Orchestrator script path
 orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"

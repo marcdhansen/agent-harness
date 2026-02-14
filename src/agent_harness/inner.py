@@ -5,11 +5,11 @@ This provides a simple, stateless agent loop with minimal overhead.
 For users who don't need full SMP compliance, this is the entry point.
 """
 
+import json
 from abc import ABC, abstractmethod
 from typing import Any
-import json
 
-from agent_harness.security import HardenedPrompt, ToolAuditor, EscapeDetector, SecurityException
+from agent_harness.security import EscapeDetector, HardenedPrompt, SecurityException, ToolAuditor
 from agent_harness.session_tracker import SessionTracker
 
 

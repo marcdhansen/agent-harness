@@ -1,7 +1,9 @@
-import re
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from agent_harness.compliance import get_active_issue_id, check_branch_info
+
+from agent_harness.compliance import check_branch_info, get_active_issue_id
+
 
 @pytest.mark.parametrize("branch_name, expected_id", [
     ("agent/agent-harness-abc-fix", "agent-harness-abc"),
