@@ -301,8 +301,11 @@ def verify_branch_type(required_type: str = "feature") -> Tuple[bool, str]:
         return False, f"Error checking branch: {e}"
 
 
-def check_git_status(*args) -> Tuple[bool, str]:
-    """Verify working tree is clean and optionally synced with remote."""
+def check_git_status(*args, turbo: bool = False) -> Tuple[bool, str]:
+    """Verify working tree is clean and optionally synced with remote.
+    
+    In turbo mode, allows documentation and metadata changes without escalation.
+    """
     try:
         if args and args[0] == "synced":
             # Check if up to date with remote
@@ -312,10 +315,46 @@ def check_git_status(*args) -> Tuple[bool, str]:
                 return True, "Branch is synced or ahead of remote"
             return False, "Branch is behind remote"
 
-        status_out = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()
-        if status_out:
-            return False, "Uncommitted changes detected"
-        return True, "Working tree clean"
+        result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+        status_out = result.stdout.strip()
+        
+        if not status_out:
+            return True, "Working tree clean"
+
+        if turbo:
+            # Detect code changes (.py, .sh, .js, .ts, etc.)
+            code_extensions = {".py", ".sh", ".js", ".ts", ".go", ".c", ".cpp"}
+            metadata_extensions = {".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".jsonl", ".log"}
+            safe_filenames = {".gitignore", "uv.lock", "package-lock.json", "poetry.lock"}
+            
+            code_changes = []
+            metadata_changes = []
+            
+            for line in status_out.split("\n"):
+                if len(line) > 3:
+                    file_path = line[3:].strip()
+                    # Skip safe files
+                    if any(file_path.endswith(f) for f in safe_filenames):
+                        continue
+                    
+                    if any(file_path.endswith(ext) for ext in code_extensions):
+                        code_changes.append(file_path)
+                    elif any(file_path.endswith(ext) for ext in metadata_extensions):
+                        metadata_changes.append(file_path)
+                    else:
+                        # Other changes (assets, binary, unknown) - treat as potential code for safety
+                        code_changes.append(file_path)
+
+            if code_changes:
+                return (
+                    False,
+                    f"ESCALATION REQUIRED: Logic changes detected: {', '.join(code_changes)}. Please switch to Full SOP.",
+                )
+            else:
+                change_type = "documentation" if metadata_changes else "metadata"
+                return True, f"{change_type.capitalize()} changes only (Turbo safe)"
+
+        return False, f"Uncommitted changes:\n{status_out}"
     except Exception as e:
         return False, f"Error checking git status: {e}"
 
