@@ -115,7 +115,9 @@ def get_active_issue_id() -> str | None:
     """Identify the active beads issue ID strictly from branch name if on feature branch."""
     try:
         branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
-        is_feature = "/" in branch and not branch.startswith(("main", "master", "develop", "origin/"))
+        is_feature = "/" in branch and not branch.startswith(
+            ("main", "master", "develop", "origin/")
+        )
 
         # Strictly derive from branch name for feature branches
         if is_feature:
@@ -125,7 +127,9 @@ def get_active_issue_id() -> str | None:
             if len(parts) > 1:
                 slug = parts[-1]
                 # Match numeric ID first, then project-id (e.g., agent-harness-abc) or dotted ID
-                match = re.search(r"^([0-9]+)(?:-|$)|^(.+?-[a-z0-9]{3})(?:-|$)|^(.+?\.[0-9]+)(?:-|$)", slug)
+                match = re.search(
+                    r"^([0-9]+)(?:-|$)|^(.+?-[a-z0-9]{3})(?:-|$)|^(.+?\.[0-9]+)(?:-|$)", slug
+                )
                 if match:
                     return match.group(1) or match.group(2) or match.group(3)
                 # Fallback if slug is just the ID
@@ -276,7 +280,9 @@ def check_branch_info(*args) -> tuple[str | bool, bool]:
                 target = args[0]
                 return branch, branch == target
 
-            is_feature = "/" in branch and not branch.startswith(("main", "master", "develop", "origin/"))
+            is_feature = "/" in branch and not branch.startswith(
+                ("main", "master", "develop", "origin/")
+            )
             return branch, is_feature
         return "unknown", False
     except Exception:
@@ -302,7 +308,7 @@ def verify_branch_type(required_type: str = "feature") -> tuple[bool, str]:
 
 def check_git_status(*args, turbo: bool = False) -> tuple[bool, str]:
     """Verify working tree is clean and optionally synced with remote.
-    
+
     In turbo mode, allows documentation and metadata changes without escalation.
     """
     try:
@@ -316,26 +322,35 @@ def check_git_status(*args, turbo: bool = False) -> tuple[bool, str]:
 
         result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         status_out = result.stdout.strip()
-        
+
         if not status_out:
             return True, "Working tree clean"
 
         if turbo:
             # Detect code changes (.py, .sh, .js, .ts, etc.)
             code_extensions = {".py", ".sh", ".js", ".ts", ".go", ".c", ".cpp"}
-            metadata_extensions = {".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".jsonl", ".log"}
+            metadata_extensions = {
+                ".md",
+                ".txt",
+                ".json",
+                ".yaml",
+                ".yml",
+                ".toml",
+                ".jsonl",
+                ".log",
+            }
             safe_filenames = {".gitignore", "uv.lock", "package-lock.json", "poetry.lock"}
-            
+
             code_changes = []
             metadata_changes = []
-            
+
             for line in status_out.split("\n"):
                 if len(line) > 3:
                     file_path = line[3:].strip()
                     # Skip safe files
                     if any(file_path.endswith(f) for f in safe_filenames):
                         continue
-                    
+
                     if any(file_path.endswith(ext) for ext in code_extensions):
                         code_changes.append(file_path)
                     elif any(file_path.endswith(ext) for ext in metadata_extensions):
@@ -718,7 +733,6 @@ def check_git_hooks_installed(*args) -> tuple[bool, str]:
             )
 
     return True, "Git hooks are installed and up to date"
-
 
 
 def check_handoff_pr_verification(*args) -> tuple[bool, str]:
@@ -1393,7 +1407,9 @@ def check_closed_issue_branches(*args) -> tuple[bool, str]:
         # We'll check each branch that looks like an issue branch
         for branch in branches:
             # Match patterns like agent/agent-harness-abc or agent-harness-abc
-            match = re.search(r"(?:^|/)([a-zA-Z0-9-]+\.[0-9]+|[a-zA-Z0-9-]+-[a-z0-9]{3})(?:-|$)", branch)
+            match = re.search(
+                r"(?:^|/)([a-zA-Z0-9-]+\.[0-9]+|[a-zA-Z0-9-]+-[a-z0-9]{3})(?:-|$)", branch
+            )
             if match:
                 issue_id = match.group(1)
                 # Check status in beads
@@ -1417,4 +1433,3 @@ def check_closed_issue_branches(*args) -> tuple[bool, str]:
         return True, "No stale issue branches detected"
     except Exception as e:
         return True, f"Stale branch check error: {e}"
-

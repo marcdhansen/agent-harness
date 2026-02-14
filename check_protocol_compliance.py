@@ -80,9 +80,7 @@ def main():
     parser.add_argument("--init", action="store_true", help="Initialize a new session")
     parser.add_argument("--close", action="store_true", help="Close the current session")
     parser.add_argument("--status", action="store_true", help="Show session status")
-    parser.add_argument(
-        "--fallback", action="store_true", help="Run manual fallback validation"
-    )
+    parser.add_argument("--fallback", action="store_true", help="Run manual fallback validation")
     parser.add_argument(
         "--install-hooks", action="store_true", help="Install git policy enforcement hooks"
     )
@@ -95,7 +93,10 @@ def main():
         install_hooks()
     elif args.fallback:
         import subprocess
-        fallback_script = Path(__file__).parent / "src" / "agent_harness" / "scripts" / "fallback_validation.sh"
+
+        fallback_script = (
+            Path(__file__).parent / "src" / "agent_harness" / "scripts" / "fallback_validation.sh"
+        )
         if fallback_script.exists():
             subprocess.run([str(fallback_script)])
         else:

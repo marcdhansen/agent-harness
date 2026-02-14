@@ -85,7 +85,9 @@ class TestOrchestratorInitialization(unittest.TestCase):
     @patch("check_protocol_compliance.prune_local_branches")
     @patch("check_protocol_compliance.check_sop_infrastructure_changes")
     @patch("check_protocol_compliance.check_branch_issue_coupling")
-    def test_run_turbo_initialization_success(self, mock_coupling, mock_sop, mock_prune, mock_closed, mock_rebase, mock_git, mock_tool):
+    def test_run_turbo_initialization_success(
+        self, mock_coupling, mock_sop, mock_prune, mock_closed, mock_rebase, mock_git, mock_tool
+    ):
         """Test successful Turbo initialization."""
         mock_tool.return_value = True
         mock_git.return_value = (True, "Working directory clean")
@@ -106,7 +108,9 @@ class TestOrchestratorInitialization(unittest.TestCase):
     @patch("check_protocol_compliance.prune_local_branches")
     @patch("check_protocol_compliance.check_sop_infrastructure_changes")
     @patch("check_protocol_compliance.check_branch_issue_coupling")
-    def test_run_turbo_initialization_blocked_by_code(self, mock_coupling, mock_sop, mock_prune, mock_closed, mock_rebase, mock_git, mock_tool):
+    def test_run_turbo_initialization_blocked_by_code(
+        self, mock_coupling, mock_sop, mock_prune, mock_closed, mock_rebase, mock_git, mock_tool
+    ):
         """Test Turbo initialization blocked by code changes."""
         mock_tool.return_value = True
         mock_git.return_value = (False, "ESCALATION REQUIRED: Code changes detected")
