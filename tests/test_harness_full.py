@@ -1,9 +1,16 @@
 import os
+from unittest.mock import patch
 
 from agent_harness.engine import create_harness_graph, get_sqlite_checkpointer, run_harness
 
 
-def test_full_harness_lifecycle():
+@patch("agent_harness.session_tracker.SessionTracker.has_active_session", return_value=True)
+@patch("agent_harness.session_tracker.SessionTracker.get_session", return_value={"id": "mock-session-id"})
+@patch("agent_harness.nodes.initialization.check_beads_issue", return_value=(True, "Mocked beads issue"))
+@patch("agent_harness.nodes.initialization.check_plan_approval", return_value=(True, "Mocked plan approval"))
+@patch("agent_harness.nodes.initialization.check_branch_issue_coupling", return_value=(True, "Mocked coupling"))
+@patch("agent_harness.nodes.finalization.check_plan_approval", return_value=(True, "Mocked plan approval"))
+def test_full_harness_lifecycle(mock_final_approval, mock_coupling, mock_init_approval, mock_beads, mock_get_sess, mock_has_sess):
     process_id = "PROCESS-SOTA"
     thread_id = "sota-thread-1"
     db_path = "harness_state_final.db"

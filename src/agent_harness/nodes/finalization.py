@@ -1,33 +1,32 @@
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from agent_harness.state import ProtocolState
 from agent_harness.checklists import ChecklistManager
 from agent_harness.compliance import (
+    check_beads_pr_sync,
+    check_child_pr_linkage,
+    check_debriefing_invoked,
     check_git_status,
+    check_handoff_beads_id,
+    check_handoff_compliance,
+    check_handoff_pr_link,
+    check_handoff_pr_verification,
+    check_no_separate_review_issues,
+    check_plan_approval,
+    check_pr_decomposition_closure,
+    check_pr_exists,
+    check_progress_log_exists,
+    check_protocol_compliance_reporting,
+    check_reflection_invoked,
+    check_todo_completion,
+    check_workspace_cleanup,
+    check_wrapup_exclusivity,
+    check_wrapup_indicator_symmetry,
+    inject_debrief_to_beads,
     validate_atomic_commits,
     validate_tdd_compliance,
-    check_reflection_invoked,
-    check_handoff_compliance,
-    check_debriefing_invoked,
-    check_plan_approval,
-    check_progress_log_exists,
-    check_handoff_pr_link,
-    check_handoff_beads_id,
-    check_todo_completion,
-    check_beads_pr_sync,
-    check_no_separate_review_issues,
-    check_pr_exists,
-    check_pr_decomposition_closure,
-    check_child_pr_linkage,
-    check_workspace_cleanup,
-    check_handoff_pr_verification,
-    check_wrapup_indicator_symmetry,
-    check_wrapup_exclusivity,
-    inject_debrief_to_beads,
-    check_protocol_compliance_reporting,
 )
+from agent_harness.state import ProtocolState
 
 
 def finalization_node(state: ProtocolState) -> ProtocolState:

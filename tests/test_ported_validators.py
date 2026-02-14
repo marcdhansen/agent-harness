@@ -1,16 +1,12 @@
-import unittest
-from unittest.mock import patch, MagicMock
 import json
-from pathlib import Path
+import unittest
+from unittest.mock import MagicMock, patch
+
 from agent_harness.compliance import (
-    check_handoff_pr_verification,
     check_beads_pr_sync,
-    check_no_separate_review_issues,
+    check_handoff_pr_verification,
     check_pr_exists,
-    check_pr_decomposition_closure,
-    check_child_pr_linkage,
     check_workspace_cleanup,
-    get_active_issue_id,
 )
 
 

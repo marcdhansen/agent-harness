@@ -1,6 +1,4 @@
-import pytest
-from pathlib import Path
-from agent_harness.compliance import check_wrapup_indicator_symmetry, check_wrapup_exclusivity
+from agent_harness.compliance import check_wrapup_exclusivity, check_wrapup_indicator_symmetry
 
 
 def test_check_wrapup_indicator_symmetry_missing_flag(tmp_path, monkeypatch):

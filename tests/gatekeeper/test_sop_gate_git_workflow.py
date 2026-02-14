@@ -3,10 +3,11 @@ Test suite for PR Merge Compliance SOP gate enforcement.
 # Gate: docs/sop/git-workflow.md (Lines: 50, 54, 55, 56)
 """
 
-import pytest
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add the Orchestrator script path
 orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"

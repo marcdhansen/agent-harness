@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock
 from pathlib import Path
-import os
+from unittest.mock import MagicMock, patch
 
 from agent_harness.compliance import inject_debrief_to_beads
 

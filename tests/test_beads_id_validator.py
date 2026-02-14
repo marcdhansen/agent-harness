@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock
 from pathlib import Path
-import json
+from unittest.mock import MagicMock, patch
 
 from agent_harness.compliance import check_handoff_beads_id, check_protocol_compliance_reporting
 

@@ -62,7 +62,7 @@ class TestInnerHarness:
 
                 return Response()
 
-        harness = InnerHarness(llm_client=MockLLM())
+        harness = InnerHarness(llm_client=MockLLM(), hardened=False)
         assert len(harness.tools) == 4
         assert "read" in harness.tools
         assert "write" in harness.tools
@@ -107,7 +107,7 @@ class TestInnerHarness:
 
                 return Response()
 
-        harness = InnerHarness(llm_client=MockLLM(), system_prompt="Custom prompt")
+        harness = InnerHarness(llm_client=MockLLM(), system_prompt="Custom prompt", hardened=False)
         assert harness.system_prompt == "Custom prompt"
 
     def test_run_no_tools(self):
@@ -121,7 +121,7 @@ class TestInnerHarness:
 
                 return Response()
 
-        harness = InnerHarness(llm_client=MockLLM())
+        harness = InnerHarness(llm_client=MockLLM(), hardened=False)
         result = harness.run("Do something")
         assert result == "Task complete!"
 
@@ -147,7 +147,7 @@ class TestInnerHarness:
 
                 return Response()
 
-        harness = InnerHarness(llm_client=MockLLM())
+        harness = InnerHarness(llm_client=MockLLM(), hardened=False)
         result = harness.run("Loop forever", max_iterations=3)
         assert "Max iterations" in result
         assert call_count == 3

@@ -1,17 +1,15 @@
-import re
-import subprocess
-from unittest.mock import MagicMock, patch
-import pytest
-
 # Mocking the Orchestrator environment
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Add Orchestrator script path to sys.path
 orchestrator_path = Path("/Users/marchansen/.gemini/antigravity/skills/Orchestrator/scripts")
 sys.path.append(str(orchestrator_path))
 
-from check_protocol_compliance import validate_atomic_commits
+from check_protocol_compliance import validate_atomic_commits  # noqa: E402
 
 
 class TestAtomicCommitValidation:
