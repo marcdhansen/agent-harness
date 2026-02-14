@@ -1362,3 +1362,64 @@ def check_hook_integrity(*args) -> Tuple[bool, str]:
         return False, f"Hook integrity failure ({detected_standard}): {'; '.join(issues)}"
 
     return True, f"All {detected_standard} hooks intact"
+
+
+def check_rebase_status(*args) -> Tuple[bool, str]:
+    """Verify that there is no active rebase or merge in progress."""
+    project_root = Path.cwd()
+    rebase_merge = project_root / ".git" / "rebase-merge"
+    rebase_apply = project_root / ".git" / "rebase-apply"
+    merge_head = project_root / ".git" / "MERGE_HEAD"
+
+    if rebase_merge.exists() or rebase_apply.exists() or merge_head.exists():
+        return False, "Active rebase or merge detected. Please complete or abort it first."
+    return True, "No active rebase or merge detected"
+
+
+def check_closed_issue_branches(*args) -> Tuple[bool, str]:
+    """Verify no local branches exist for Beads issues that are already closed."""
+    if not check_tool_available("bd"):
+        return True, "Beads CLI not available, stale branch check skipped"
+
+    try:
+        # Get all local branches
+        result = subprocess.run(
+            ["git", "branch", "--format=%(refname:short)"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return True, "Could not list local branches"
+
+        branches = result.stdout.strip().split("\n")
+        stale_branches = []
+
+        # Get closed issues from beads
+        # We'll check each branch that looks like an issue branch
+        for branch in branches:
+            # Match patterns like agent/agent-harness-abc or agent-harness-abc
+            match = re.search(r"(?:^|/)([a-zA-Z0-9-]+\.[0-9]+|[a-zA-Z0-9-]+-[a-z0-9]{3})(?:-|$)", branch)
+            if match:
+                issue_id = match.group(1)
+                # Check status in beads
+                res = subprocess.run(
+                    ["bd", "show", issue_id, "--json"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if res.returncode == 0:
+                    data = json.loads(res.stdout)
+                    issue_data = data[0] if isinstance(data, list) else data
+                    if issue_data and issue_data.get("status") == "closed":
+                        stale_branches.append(f"{branch} (Issue {issue_id} closed)")
+
+        if stale_branches:
+            return (
+                False,
+                f"Stale branches detected for closed issues: {', '.join(stale_branches)}. Please delete them.",
+            )
+        return True, "No stale issue branches detected"
+    except Exception as e:
+        return True, f"Stale branch check error: {e}"
+

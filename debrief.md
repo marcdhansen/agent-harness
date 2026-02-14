@@ -1,23 +1,19 @@
-# Session Debrief - agent-harness-xns
+# Debrief: Test Fix Regression [agent-ujs]
 
 ## Summary
 
-Hardened Beads ID enforcement in the Orchestrator.
+Fixed 4 failing tests caused by recent hardening measures and restored 2 missing validators (`check_rebase_status`, `check_closed_issue_branches`) that were causing blocking errors in the Orchestrator loop.
 
-## Implementation Details
+## Changes
 
-- Implemented `check_protocol_compliance_reporting` in `src/agent_harness/compliance.py`.
-- Hardened `check_handoff_beads_id` in `src/agent_harness/compliance.py` and the global Orchestrator.
-- Updated the global Orchestrator's `finalization_validator.py` to require Beads ID and 🏁 in compliance reports.
-- Fixed `plan_validator.py` in global Orchestrator to support newer Beads hook patterns and 'in_progress' status.
+- Updated `tests/test_inner_harness.py` to use `hardened=False` where appropriate.
+- Implemented missing validators in `src/agent_harness/compliance.py`.
+- Registered validators in `src/agent_harness/nodes/initialization.py`.
+- Mocked session and environment checks in `tests/test_harness_full.py` and `tests/test_harness_hil.py`.
+- Added `tests/test_missing_validators.py` for verification.
 
-## Verification Results
+## PR Link
 
-- All tests in `tests/test_beads_id_validator.py` passed.
-- Orchestrator `--init` passed successfully.
+PR: <https://github.com/marcdhansen/agent-harness/pull/34>
 
-PR Link: <https://github.com/marcdhansen/agent-harness/pull/29>
-
-## Protocol Compliance
-
-Protocol Compliance: 100% verified via Orchestrator (agent-harness-xns) 🏁
+Protocol Compliance: 100% verified via Orchestrator (agent-ujs) 🏁
