@@ -8,6 +8,11 @@ from agent_harness.compliance import (
     check_planning_docs,
     check_beads_issue,
     check_plan_approval,
+    check_branch_issue_coupling,
+    check_sop_simplification,
+    check_hook_integrity,
+    check_progress_log_exists,
+    check_harness_session,
 )
 from agent_harness.checklists import ChecklistManager
 from agent_harness.state import ProtocolState
@@ -28,10 +33,11 @@ def initialization_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_planning_docs", check_planning_docs)
     manager.register_validator("check_beads_issue", check_beads_issue)
     manager.register_validator("check_plan_approval", check_plan_approval)
-    from agent_harness.compliance import check_harness_session, check_hook_integrity
-
     manager.register_validator("check_harness_session", check_harness_session)
     manager.register_validator("check_hook_integrity", check_hook_integrity)
+    manager.register_validator("check_branch_issue_coupling", check_branch_issue_coupling)
+    manager.register_validator("check_sop_simplification", check_sop_simplification)
+    manager.register_validator("check_progress_log_exists", check_progress_log_exists)
 
     # Run initialization phase
     passed, blockers, warnings = manager.run_phase("initialization")

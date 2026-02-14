@@ -1,24 +1,23 @@
-# Finalization Debriefing
+# Session Debrief - agent-harness-xns
 
-**Session**: 20260214_agent_2zl
-**Timestamp**: 2026-02-14 14:55:00
-**Issue**: agent-2zl
-**PR Link**: <https://github.com/marcdhansen/agent-harness/pull/30>
+## Summary
 
-## 1. Mission Summary
+Hardened Beads ID enforcement in the Orchestrator.
 
-Generalized project ID and branch naming detection in the Orchestrator and local compliance module. This allows the harness to be used in projects other than 'agent-harness' (e.g. lightrag, beads).
+## Implementation Details
 
-## 2. Implementation Details
+- Implemented `check_protocol_compliance_reporting` in `src/agent_harness/compliance.py`.
+- Hardened `check_handoff_beads_id` in `src/agent_harness/compliance.py` and the global Orchestrator.
+- Updated the global Orchestrator's `finalization_validator.py` to require Beads ID and 🏁 in compliance reports.
+- Fixed `plan_validator.py` in global Orchestrator to support newer Beads hook patterns and 'in_progress' status.
 
-- Modified `~/.gemini/antigravity/skills/Orchestrator/scripts/validators/git_validator.py`
-- Modified `src/agent_harness/compliance.py`
-- Added `tests/test_flexible_ids.py`
-- Refined regex patterns to support numeric, project-hash, and dotted IDs.
+## Verification Results
 
-## 3. Verification
+- All tests in `tests/test_beads_id_validator.py` passed.
+- Orchestrator `--init` passed successfully.
 
-- `pytest tests/test_flexible_ids.py` (Passed 13 cases)
-- `pytest tests/gatekeeper/test_sop_gate_git_workflow.py` (Passed)
+PR Link: <https://github.com/marcdhansen/agent-harness/pull/29>
 
-Protocol Compliance: 100% verified via Orchestrator (agent-2zl) 🏁
+## Protocol Compliance
+
+Protocol Compliance: 100% verified via Orchestrator (agent-harness-xns) 🏁

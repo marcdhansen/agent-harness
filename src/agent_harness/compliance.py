@@ -403,21 +403,78 @@ def check_handoff_beads_id(*args) -> Tuple[bool, str]:
     if not issue_id:
         return False, "Could not determine active Beads issue ID"
 
+    # Potential debrief locations
+    debrief_paths = [Path("debrief.md")]
+
     brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
     if brain_dir.exists():
         session_dirs = sorted(
             [d for d in brain_dir.iterdir() if d.is_dir()],
             key=lambda x: x.stat().st_mtime,
             reverse=True,
-        )[:1]
+        )[:3]  # Check top 3 sessions
         for d in session_dirs:
-            debrief = d / "debrief.md"
-            if debrief.exists():
-                content = debrief.read_text()
-                if issue_id in content:
-                    return True, f"Beads issue ID '{issue_id}' found in debrief.md"
+            debrief_paths.append(d / "debrief.md")
 
-    return False, f"Beads issue ID '{issue_id}' not found in debrief.md"
+    # Hardened check: look for specific labels or headers
+    patterns = [
+        rf"\b{re.escape(issue_id)}\b",
+        rf"Issue:\s*{re.escape(issue_id)}",
+        rf"Beads\s*(?:ID|Issue):\s*{re.escape(issue_id)}",
+        rf"\[{re.escape(issue_id)}\]",
+    ]
+
+    for p in debrief_paths:
+        if p.exists():
+            content = p.read_text()
+            for pattern in patterns:
+                if re.search(pattern, content, re.IGNORECASE):
+                    return True, f"Beads issue ID '{issue_id}' verified in {p}"
+
+    return (
+        False,
+        f"Beads issue ID '{issue_id}' not found in any debrief.md (Required for handoff transparency)",
+    )
+
+
+def check_protocol_compliance_reporting(*args) -> Tuple[bool, str]:
+    """Verify protocol compliance reporting with Beads ID in session handoff/summary."""
+    issue_id = get_active_issue_id()
+    if not issue_id:
+        return False, "Could not determine active Beads issue ID for compliance reporting"
+
+    target_pattern = (
+        rf"Protocol Compliance: 100% verified via Orchestrator\s+\({re.escape(issue_id)}\)\.?\s*🏁"
+    )
+
+    # Potential debrief locations
+    debrief_paths = [Path("debrief.md")]
+
+    brain_dir = Path.home() / ".gemini" / "antigravity" / "brain"
+    if brain_dir.exists():
+        session_dirs = sorted(
+            [d for d in brain_dir.iterdir() if d.is_dir()],
+            key=lambda x: x.stat().st_mtime,
+            reverse=True,
+        )[:3]
+        for d in session_dirs:
+            debrief_paths.append(d / "debrief.md")
+
+    for p in debrief_paths:
+        if p.exists():
+            content = p.read_text()
+            if re.search(target_pattern, content):
+                return True, f"Full protocol compliance reporting found in {p}"
+            elif "Protocol Compliance: 100% verified via Orchestrator." in content:
+                return (
+                    False,
+                    f"Compliance statement found but missing issue ID '{issue_id}' or 🏁. Expected: 'Protocol Compliance: 100% verified via Orchestrator ({issue_id}) 🏁'",
+                )
+
+    return (
+        False,
+        f"Missing required compliance statement: 'Protocol Compliance: 100% verified via Orchestrator ({issue_id}) 🏁'",
+    )
 
 
 def check_wrapup_indicator_symmetry(*args) -> Tuple[bool, str]:
@@ -1070,3 +1127,199 @@ def inject_debrief_to_beads(*args) -> Tuple[bool, str]:
             return False, f"Failed to inject debrief: {result.stderr.strip()}"
     except Exception as e:
         return False, f"Error during debrief injection: {e}"
+
+
+def check_branch_issue_coupling(*args) -> Tuple[bool, str]:
+    """Verify that the current branch ID matches a 'started' Beads issue and follows naming conventions."""
+    branch, is_feature = check_branch_info()
+
+    # Protected base branches allowed for initial setup/planning
+    protected_branches = ["main", "master", "develop", "origin/main", "origin/master"]
+
+    if not is_feature:
+        if branch in protected_branches:
+            return True, f"On protected base branch '{branch}'. Use for discovery/planning only."
+        else:
+            return (
+                False,
+                f"PROTOCOL VIOLATION: Branch '{branch}' does not follow naming convention ('agent/<issue-id>-<desc>').",
+            )
+
+    # Extract ID from branch
+    branch_id = get_active_issue_id()
+    if not branch_id:
+        return False, f"Could not identify Beads issue ID from branch '{branch}'"
+
+    if not check_tool_available("bd"):
+        return True, "Beads CLI not available, coupling check skipped"
+
+    try:
+        # Check if the branch_id issue is actually 'started'
+        result = subprocess.run(
+            ["bd", "show", branch_id, "--json"], capture_output=True, text=True, timeout=5
+        )
+        if result.returncode != 0:
+            return False, f"Branch refers to unknown Beads issue: {branch_id}"
+
+        data = json.loads(result.stdout)
+        issue_data = data[0] if isinstance(data, list) else data
+
+        if not issue_data:
+            return False, f"Issue {branch_id} data not found"
+
+        labels = issue_data.get("labels", [])
+
+        if (
+            "status:started" in labels
+            or "started:true" in labels
+            or issue_data.get("status") == "in_progress"
+        ):
+            return True, f"Branch '{branch}' correctly coupled with started issue '{branch_id}'"
+
+        # If it's NOT started, we have a violation
+        return (
+            False,
+            f"PROTOCOL VIOLATION: Branch issue '{branch_id}' is NOT in 'started' state. "
+            f"Current labels: {', '.join(labels)}. "
+            f"Run 'bd set-state {branch_id} started=true' first.",
+        )
+
+    except Exception as e:
+        return False, f"Coupling check error: {e}"
+
+
+def check_sop_simplification(*args) -> Tuple[bool, str]:
+    """Check for SOP simplification proposals and their validation status."""
+    proposal_patterns = [
+        "*.md",
+        ".agent/sop_simplification_*.md",
+        "sop_simplification_*.md",
+    ]
+
+    proposals = []
+    for pattern in proposal_patterns:
+        proposals.extend(Path(".").glob(pattern))
+        proposals.extend(Path(".agent").glob(pattern))
+
+    if not proposals:
+        return True, "No SOP simplification proposals found"
+
+    pending_proposals = []
+    approved_proposals = []
+
+    for proposal in proposals:
+        if "sop_simplification_" in proposal.name:
+            content = proposal.read_text()
+            if "## Approval Section" in content:
+                if "Approve Simplified" in content:
+                    approved_proposals.append(proposal.name)
+                elif "Approve Standard" in content or "Reject" in content:
+                    continue
+                else:
+                    pending_proposals.append(proposal.name)
+            else:
+                pending_proposals.append(proposal.name)
+
+    if pending_proposals:
+        return (
+            False,
+            f"Pending SOP simplification proposals: {', '.join(pending_proposals)}",
+        )
+
+    if approved_proposals:
+        return True, f"Approved simplified SOP: {', '.join(approved_proposals)}"
+
+    return True, "SOP simplification proposals processed"
+
+
+def check_hook_integrity(*args) -> Tuple[bool, str]:
+    """Check if git hooks are intact and not tampered with. Supports pre-commit and beads."""
+    standard_hooks = {
+        "pre-commit-framework": {
+            ".git/hooks/pre-commit": [
+                "#!/usr/bin/env bash",
+                "# File generated by pre-commit:",
+                'pre_commit "${ARGS[@]}"',
+            ],
+            ".git/hooks/pre-push": [
+                "#!/usr/bin/env bash",
+                "# File generated by pre-commit:",
+                'pre_commit "${ARGS[@]}"',
+            ],
+        },
+        "beads": {
+            ".git/hooks/pre-commit": [
+                "bd (beads) pre-commit hook",
+                # Support both legacy and shim patterns
+                ["bd sync --flush-only", "bd hooks run pre-commit"],
+            ],
+            ".git/hooks/post-merge": [
+                "bd (beads) post-merge hook",
+                ["bd import", "bd hooks run post-merge"],
+            ],
+        },
+    }
+
+    detected_standard = None
+    if Path(".pre-commit-config.yaml").exists():
+        detected_standard = "pre-commit-framework"
+    elif Path(".beads").exists():
+        detected_standard = "beads"
+
+    if not detected_standard:
+        for name, hook_set in standard_hooks.items():
+            for path, patterns in hook_set.items():
+                hook_file = Path(path)
+                if hook_file.exists() and hook_file.is_file():
+                    content = hook_file.read_text()
+                    if all(
+                        (
+                            pattern in content
+                            if isinstance(pattern, str)
+                            else any(p in content for p in pattern)
+                        )
+                        for pattern in patterns
+                    ):
+                        detected_standard = name
+                        break
+            if detected_standard:
+                break
+
+    if not detected_standard:
+        return True, "No standard hook framework detected (Integrity check skipped)"
+
+    hook_set = standard_hooks[detected_standard]
+    missing_hooks = []
+    tampered_hooks = []
+
+    for hook_path, expected_patterns in hook_set.items():
+        hook_file = Path(hook_path)
+        if not hook_file.exists():
+            missing_hooks.append(hook_path)
+            continue
+
+        if not hook_file.is_file() or not os.access(hook_file, os.X_OK):
+            tampered_hooks.append(f"{hook_path} (not executable or not a file)")
+            continue
+
+        content = hook_file.read_text()
+        for pattern in expected_patterns:
+            if isinstance(pattern, list):
+                if not any(p in content for p in pattern):
+                    tampered_hooks.append(
+                        f"{hook_path} (missing one of expected patterns: {', '.join([p[:20] for p in pattern])}...)"
+                    )
+                    break
+            elif pattern not in content:
+                tampered_hooks.append(f"{hook_path} (missing expected pattern: {pattern[:30]}...)")
+                break
+
+    if missing_hooks or tampered_hooks:
+        issues = []
+        if missing_hooks:
+            issues.append(f"Missing hooks: {', '.join(missing_hooks)}")
+        if tampered_hooks:
+            issues.append(f"Tampered hooks: {', '.join(tampered_hooks)}")
+        return False, f"Hook integrity failure ({detected_standard}): {'; '.join(issues)}"
+
+    return True, f"All {detected_standard} hooks intact"

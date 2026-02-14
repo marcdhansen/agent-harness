@@ -26,6 +26,7 @@ from agent_harness.compliance import (
     check_wrapup_indicator_symmetry,
     check_wrapup_exclusivity,
     inject_debrief_to_beads,
+    check_protocol_compliance_reporting,
 )
 
 
@@ -99,6 +100,9 @@ def retrospective_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_wrapup_indicator_symmetry", check_wrapup_indicator_symmetry)
     manager.register_validator("check_wrapup_exclusivity", check_wrapup_exclusivity)
     manager.register_validator("inject_debrief_to_beads", inject_debrief_to_beads)
+    manager.register_validator(
+        "check_protocol_compliance_reporting", check_protocol_compliance_reporting
+    )
 
     # Run retrospective phase
     passed, blockers, warnings = manager.run_phase("retrospective")

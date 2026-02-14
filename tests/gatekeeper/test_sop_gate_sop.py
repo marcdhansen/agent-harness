@@ -21,8 +21,8 @@ except ImportError:
 class TestGateBeadsIssue:
     """Tests for mandatory Beads issue presence."""
 
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("validators.plan_validator.check_tool_available")
+    @patch("validators.plan_validator.subprocess.run")
     def test_missing_issue_blocked(self, mock_run, mock_tool):
         """Verify that work is blocked if no Beads issue is active."""
         if orchestrator is None:
@@ -36,8 +36,8 @@ class TestGateBeadsIssue:
         assert passed is False
         assert "No active Beads issues" in msg
 
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("validators.plan_validator.check_tool_available")
+    @patch("validators.plan_validator.subprocess.run")
     def test_active_issue_passes(self, mock_run, mock_tool):
         """Verify that work passes if a Beads issue is active."""
         if orchestrator is None:
@@ -49,4 +49,4 @@ class TestGateBeadsIssue:
 
         passed, msg = orchestrator.check_beads_issue()
         assert passed is True
-        assert "Issues ready: 1" in msg
+        assert "Issues ready for planning: 1" in msg
