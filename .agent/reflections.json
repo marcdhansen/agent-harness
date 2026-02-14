@@ -1289,46 +1289,12 @@
     "status": "FALLBACK_COMPLETE"
   },
   {
-    "timestamp": 1771032325.62769,
-    "mission_name": "Unknown Mission",
+    "timestamp": 1771080253.355055,
+    "mission_name": "agent-2zl",
     "outcome": "SUCCESS",
     "duration_hours": 1.0,
     "success_metrics": {
-      "Files Modified": 3798,
-      "Session Completed": true
-    },
-    "technical_learnings": [
-      "Non-interactive reflection fallback used",
-      "Session completed with automated capture"
-    ],
-    "challenges_overcome": [
-      "Non-interactive environment detected",
-      "Reflection completed using fallback mechanism"
-    ],
-    "protocol_issues": [],
-    "process_improvements": [
-      "Reflection system now supports non-interactive mode"
-    ],
-    "refactoring_candidates": [],
-    "quantitative_results": {},
-    "handoff_quality": {
-      "was_multi_phase": false,
-      "handoff_completed": false,
-      "compliance_score": 0,
-      "document_quality": "Not applicable (single-phase implementation)",
-      "issues_found": [],
-      "successor_readiness": "N/A"
-    },
-    "next_mission_readiness": true,
-    "status": "FALLBACK_COMPLETE"
-  },
-  {
-    "timestamp": 1771040958.276729,
-    "mission_name": "Unknown Mission",
-    "outcome": "SUCCESS",
-    "duration_hours": 1.0,
-    "success_metrics": {
-      "Files Modified": 3807,
+      "Files Modified": 3963,
       "Session Completed": true
     },
     "technical_learnings": [
