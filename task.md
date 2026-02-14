@@ -1,14 +1,18 @@
-# Task: Hardening Agent Harnesses - Preventing Bypass Attempts (agent-gbv.13)
+# Task: agent-2zl - Allow flexible branch naming and project IDs
 
 ## Objective
 
-Implement architectural and prompt-level defenses to prevent AI agents from bypassing harness constraints.
+The git_validator.py and other compliance checks strictly enforce 'agent-harness' prefix in several places. Generalize these to support various project prefixes.
 
-## TODO
+## Tasks
 
-- [x] Implement `ToolAuditor` for tracking tool usage patterns
-- [x] Implement `EscapeDetector` for identifying jailbreak attempts
-- [x] Harden `InnerHarness` system prompts using sandwich constraints
-- [x] Create red team test cases for bypass prevention
-- [x] Implement Git-level policy enforcement (pre-commit hooks)
-- [x] (Optional) Migrate state to Pydantic for strict validation
+- [x] Generalize `check_branch_info` in global orchestrator
+- [x] Generalize `get_active_issue_id` regex in global orchestrator
+- [x] Generalize prune and closed issue checks in global orchestrator
+- [x] Sycn changes to local `src/agent_harness/compliance.py`
+- [x] Add comprehensive tests for flexible ID detection
+- [x] Verify all tests pass
+
+## Approval
+
+👍 APPROVED by Antigravity (Local context)

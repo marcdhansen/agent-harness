@@ -116,19 +116,19 @@ def get_active_issue_id() -> Optional[str]:
     """Identify the active beads issue ID strictly from branch name if on feature branch."""
     try:
         branch = subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()
-        is_feature = branch.startswith(("agent/", "feature/", "chore/", "agent-harness/"))
+        is_feature = "/" in branch and not branch.startswith(("main", "master", "develop", "origin/"))
 
         # Strictly derive from branch name for feature branches
         if is_feature:
-            # Expected format: agent-harness/<issue-id>-<brief-desc>
-            # Example: agent-harness/agent-harness-va4-fix-logic
+            # Expected format: <prefix>/<issue-id>-<brief-desc>
+            # Example: agent/agent-harness-va4-fix-logic
             parts = branch.split("/")
             if len(parts) > 1:
                 slug = parts[-1]
-                # Match project-id-id (e.g., agent-harness-abc) or numeric ID at the start of the slug
-                match = re.search(r"^(agent-harness-[a-z0-9]{3}|[0-9]+)", slug)
+                # Match numeric ID first, then project-id (e.g., agent-harness-abc) or dotted ID
+                match = re.search(r"^([0-9]+)(?:-|$)|^(.+?-[a-z0-9]{3})(?:-|$)|^(.+?\.[0-9]+)(?:-|$)", slug)
                 if match:
-                    return match.group(1)
+                    return match.group(1) or match.group(2) or match.group(3)
                 # Fallback if slug is just the ID
                 return slug
             return branch
@@ -277,7 +277,7 @@ def check_branch_info(*args) -> tuple[Union[str, bool], bool]:
                 target = args[0]
                 return branch, branch == target
 
-            is_feature = branch.startswith(("agent/", "feature/", "chore/", "agent-harness/"))
+            is_feature = "/" in branch and not branch.startswith(("main", "master", "develop", "origin/"))
             return branch, is_feature
         return "unknown", False
     except Exception:
