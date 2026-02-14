@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from agent_harness.checklists import ChecklistManager
 from agent_harness.compliance import (
     check_beads_issue,

@@ -26,24 +26,25 @@ class TestMissingValidators(unittest.TestCase):
     @patch("agent_harness.compliance.json.loads")
     def test_check_closed_issue_branches_stale(self, mock_json, mock_run, mock_tool):
         mock_tool.return_value = True
-        
+
         # Mock git branch output
         mock_git = MagicMock()
         mock_git.returncode = 0
         mock_git.stdout = "main\nfeat/agent-harness-abc\n"
-        
+
         # Mock bd show output
         mock_bd = MagicMock()
         mock_bd.returncode = 0
         mock_bd.stdout = '{"status": "closed"}'
-        
+
         mock_run.side_effect = [mock_git, mock_bd]
         mock_json.return_value = {"status": "closed"}
-        
+
         passed, msg = check_closed_issue_branches()
         self.assertFalse(passed)
         self.assertIn("Stale branches detected", msg)
         self.assertIn("agent-harness-abc", msg)
+
 
 if __name__ == "__main__":
     unittest.main()

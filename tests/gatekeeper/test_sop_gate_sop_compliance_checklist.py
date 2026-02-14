@@ -48,9 +48,9 @@ class TestGateReflection:
             "session_name": "test",
             "outcome": "stale-check",
             "technical_learnings": [],
-            "refactoring_candidates": []
+            "refactoring_candidates": [],
         }
-        
+
         # Mock mtime to be 3 hours ago
         mock_st = MagicMock()
         mock_st.st_mtime = time.time() - (3 * 3600)
@@ -74,9 +74,9 @@ class TestGateReflection:
             "session_name": "test",
             "outcome": "recent-check",
             "technical_learnings": [],
-            "refactoring_candidates": []
+            "refactoring_candidates": [],
         }
-        
+
         # Mock mtime to be 10 minutes ago
         mock_st = MagicMock()
         mock_st.st_mtime = time.time() - 600
