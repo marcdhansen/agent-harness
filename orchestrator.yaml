@@ -1,0 +1,13 @@
+# Orchestrator Configuration
+
+approval:
+  default_ttl_hours: 4
+  rules:
+    - task_type: "fix"
+      ttl_hours: 2
+    - task_type: "feature"
+      ttl_hours: 8
+    - task_type: "refactor"
+      ttl_hours: 4
+    - task_type: "debugging"
+      ttl_hours: 48
