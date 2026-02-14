@@ -592,6 +592,44 @@ def check_pr_exists(*args) -> tuple[bool, str]:
         return False, f"PR check failed: {e}"
 
 
+def check_harness_session(*args) -> Tuple[bool, str]:
+    """Verify that an active harness session exists."""
+    from agent_harness.session_tracker import SessionTracker
+
+    tracker = SessionTracker()
+    if tracker.has_active_session():
+        session = tracker.get_session()
+        return True, f"Active session found: {session['id']}"
+    return False, "No active harness session. Run: python check_protocol_compliance.py --init"
+
+
+def check_git_hooks_installed(*args) -> Tuple[bool, str]:
+    """Verify that the required git hooks are installed and up to date."""
+    project_root = Path.cwd()
+    hook_path = project_root / ".git" / "hooks" / "pre-commit"
+    template_path = project_root / "src" / "agent_harness" / "scripts" / "hooks" / "pre-commit"
+
+    if not hook_path.exists():
+        return (
+            False,
+            "Git pre-commit hook is not installed. Use 'python check_protocol_compliance.py --install-hooks'",
+        )
+
+    if template_path.exists():
+        if hook_path.read_text() != template_path.read_text():
+            return (
+                False,
+                "Git pre-commit hook is outdated. Use 'python check_protocol_compliance.py --install-hooks'",
+            )
+
+    return True, "Git hooks are installed and up to date"
+
+
+def check_hook_integrity(*args) -> Tuple[bool, str]:
+    """Alias for check_git_hooks_installed for compatibility with checklists."""
+    return check_git_hooks_installed(*args)
+
+
 def check_handoff_pr_verification(*args) -> tuple[bool, str]:
     """Verify that there are no orphaned or multiple open PRs for the current issue."""
     if not check_tool_available("gh") or not check_tool_available("bd"):
@@ -982,7 +1020,7 @@ def inject_debrief_to_beads(*args) -> Tuple[bool, str]:
         return True, "No debrief.md found in recent session (skipping injection)"
 
     content = debrief_path.read_text()
-    
+
     # Check if we should only inject 'Implementation Details'
     if "## Implementation Details" in content:
         parts = content.split("## Implementation Details")
@@ -1000,10 +1038,7 @@ def inject_debrief_to_beads(*args) -> Tuple[bool, str]:
     # Check for duplicates by querying beads
     try:
         show_res = subprocess.run(
-            ["bd", "show", issue_id],
-            capture_output=True,
-            text=True,
-            timeout=10
+            ["bd", "show", issue_id], capture_output=True, text=True, timeout=10
         )
         if show_res.returncode == 0:
             # Use a smaller snippet to check for existence to avoid match failures due to truncation or headers
@@ -1018,17 +1053,17 @@ def inject_debrief_to_beads(*args) -> Tuple[bool, str]:
         # We'll use a temporary file to avoid shell expansion issues with large content
         temp_debrief = Path("/tmp/debrief_to_inject.md")
         temp_debrief.write_text(injection_content)
-        
+
         result = subprocess.run(
             ["bd", "comments", "add", issue_id, "-f", str(temp_debrief)],
             capture_output=True,
             text=True,
-            timeout=15
+            timeout=15,
         )
-        
+
         if temp_debrief.exists():
             temp_debrief.unlink()
-            
+
         if result.returncode == 0:
             return True, f"Injected debrief content into issue '{issue_id}'"
         else:

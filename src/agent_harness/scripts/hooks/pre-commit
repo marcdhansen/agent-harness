@@ -1,0 +1,27 @@
+#!/bin/bash
+# Agent Harness Pre-commit Hook
+# This hook ensures that all commits are made during an active harness session.
+
+set -e
+
+echo "🔒 Running Agent Harness pre-commit checks..."
+
+# Check if we are in a session
+# We call the python validation script. We assume the environment is set up.
+# Since we are in the repo, we can use 'python -m agent_harness.scripts.validate_session'
+# if the package is installed in editable mode or PYTHONPATH is set.
+# For robustness, we'll try to find the project root and run it.
+
+# Find project root
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+export PYTHONPATH="$PROJECT_ROOT/src:$PYTHONPATH"
+
+if ! python3 -m agent_harness.scripts.validate_session; then
+    echo "❌ ERROR: Commit blocked. No active agent harness session detected."
+    echo "Please initialize a session first:"
+    echo "  python check_protocol_compliance.py --init"
+    exit 1
+fi
+
+echo "✅ Harness session verified."
+exit 0
