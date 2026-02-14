@@ -1,0 +1,84 @@
+{
+  "task_id": "agent-harness-dlk",
+  "created_at": "2026-02-13T15:57:26.116244",
+  "task_details": {
+    "id": "agent-harness-dlk",
+    "title": "[P0] [bug] Enforce 'Clean Initial State' and Detect Hanging Rebases in Orchestrator Init",
+    "description": "Prevent workspace fragmentation and 'branch soup' by blocking or warning during Orchestrator --init if there are local branches that have already been merged into main or correspond to closed Beads issues. Also, explicitly detect and block on hanging rebases or merge states (e.g., .git/rebase-merge exists) to prevent agents from working on top of broken states.",
+    "status": "open",
+    "priority": 0,
+    "issue_type": "task",
+    "owner": "hansen.marc@gmail.com",
+    "created_at": "2026-02-11T16:06:35.427901Z",
+    "created_by": "Marc Hansen",
+    "updated_at": "2026-02-11T16:06:35.427901Z",
+    "labels": [
+      "status:started"
+    ],
+    "dependents": [
+      {
+        "id": "agent-harness-dlk.1",
+        "title": "State change: status \u2192 started",
+        "description": "Set status to started",
+        "status": "open",
+        "priority": 4,
+        "issue_type": "event",
+        "created_at": "2026-02-13T15:57:03.999675Z",
+        "created_by": "Marc Hansen",
+        "updated_at": "2026-02-13T15:57:03.999675Z",
+        "dependency_type": "parent-child"
+      }
+    ]
+  },
+  "blast_radius_analysis": {
+    "level": "AnalysisLevel.DETAILED",
+    "summary": {
+      "affected_files_count": 2,
+      "critical_paths": [],
+      "risk_level": "RiskLevel.LOW",
+      "estimated_testing_effort": "2-4 hours",
+      "deployment_impact": "NONE",
+      "timeline_impact": "1-2 days"
+    },
+    "detailed": {
+      "file_impacts": {
+        ".beads/issues.jsonl": {
+          "path": ".beads/issues.jsonl",
+          "change_type": "ChangeType.CONFIG_CHANGE",
+          "complexity_score": 1.13,
+          "dependencies_affected": [],
+          "test_coverage": 0.2,
+          "risk_level": "RiskLevel.MEDIUM"
+        },
+        "tests/test_orchestrator.py": {
+          "path": "tests/test_orchestrator.py",
+          "change_type": "ChangeType.FUNCTION_CHANGE",
+          "complexity_score": 20,
+          "dependencies_affected": [],
+          "test_coverage": 0.8,
+          "risk_level": "RiskLevel.HIGH"
+        }
+      },
+      "dependency_chain": [
+        "tests/test_orchestrator.py",
+        ".beads/issues.jsonl"
+      ],
+      "test_coverage_gaps": [
+        ".beads/issues.jsonl"
+      ],
+      "migration_requirements": [],
+      "rollback_complexity": "SIMPLE"
+    },
+    "deep_dive": null,
+    "total_impact_score": 4,
+    "recommendations": [
+      "\ud83e\uddea Add test coverage for 1 files with inadequate testing"
+    ]
+  },
+  "changed_files": [
+    ".beads/issues.jsonl",
+    "tests/test_orchestrator.py"
+  ],
+  "analysis_level": "detailed",
+  "planning_status": "scoped"
+}

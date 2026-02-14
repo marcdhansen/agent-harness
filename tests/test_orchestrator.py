@@ -81,12 +81,18 @@ class TestOrchestratorInitialization(unittest.TestCase):
 
     @patch("check_protocol_compliance.check_tool_available")
     @patch("check_protocol_compliance.check_git_status")
+    @patch("check_protocol_compliance.check_rebase_status")
+    @patch("check_protocol_compliance.check_closed_issue_branches")
+    @patch("check_protocol_compliance.prune_local_branches")
     @patch("check_protocol_compliance.check_sop_infrastructure_changes")
     @patch("check_protocol_compliance.check_branch_issue_coupling")
-    def test_run_turbo_initialization_success(self, mock_coupling, mock_sop, mock_git, mock_tool):
+    def test_run_turbo_initialization_success(self, mock_coupling, mock_sop, mock_prune, mock_closed, mock_rebase, mock_git, mock_tool):
         """Test successful Turbo initialization."""
         mock_tool.return_value = True
         mock_git.return_value = (True, "Working directory clean")
+        mock_rebase.return_value = (True, "No hanging rebase")
+        mock_closed.return_value = (True, "No closed issue branches")
+        mock_prune.return_value = (True, "No stale branches")
         mock_sop.return_value = (False, "No SOP changes")
         mock_coupling.return_value = (True, "Coupling OK")
 
@@ -96,10 +102,20 @@ class TestOrchestratorInitialization(unittest.TestCase):
 
     @patch("check_protocol_compliance.check_tool_available")
     @patch("check_protocol_compliance.check_git_status")
-    def test_run_turbo_initialization_blocked_by_code(self, mock_git, mock_tool):
+    @patch("check_protocol_compliance.check_rebase_status")
+    @patch("check_protocol_compliance.check_closed_issue_branches")
+    @patch("check_protocol_compliance.prune_local_branches")
+    @patch("check_protocol_compliance.check_sop_infrastructure_changes")
+    @patch("check_protocol_compliance.check_branch_issue_coupling")
+    def test_run_turbo_initialization_blocked_by_code(self, mock_coupling, mock_sop, mock_prune, mock_closed, mock_rebase, mock_git, mock_tool):
         """Test Turbo initialization blocked by code changes."""
         mock_tool.return_value = True
         mock_git.return_value = (False, "ESCALATION REQUIRED: Code changes detected")
+        mock_rebase.return_value = (True, "No hanging rebase")
+        mock_closed.return_value = (True, "No closed issue branches")
+        mock_prune.return_value = (True, "No stale branches")
+        mock_sop.return_value = (False, "No SOP changes")
+        mock_coupling.return_value = (True, "Coupling OK")
 
         with patch("builtins.print"):
             result = orchestrator.run_turbo_initialization()
@@ -182,8 +198,18 @@ class TestOrchestratorFinalization(unittest.TestCase):
     @patch("check_protocol_compliance.check_todo_completion")
     @patch("check_protocol_compliance.check_hook_integrity")
     @patch("check_protocol_compliance.check_pr_exists")
+    @patch("check_protocol_compliance.check_pr_decomposition_closure")
+    @patch("check_protocol_compliance.check_child_pr_linkage")
+    @patch("check_protocol_compliance.check_handoff_pr_verification")
+    @patch("check_protocol_compliance.check_beads_pr_sync")
+    @patch("check_protocol_compliance.check_workspace_cleanup")
     def test_run_finalization_success(
         self,
+        mock_cleanup,
+        mock_sync,
+        mock_verification,
+        mock_linkage,
+        mock_decomposition,
         mock_pr,
         mock_hook,
         mock_todo,
@@ -214,6 +240,11 @@ class TestOrchestratorFinalization(unittest.TestCase):
         mock_todo.return_value = (True, "All tasks completed")
         mock_hook.return_value = (True, "Hooks intact")
         mock_pr.return_value = (True, "PR found")
+        mock_decomposition.return_value = (True, "Protocol followed")
+        mock_linkage.return_value = (True, "Linkage OK")
+        mock_verification.return_value = (True, "Verification OK")
+        mock_sync.return_value = (True, "Sync OK")
+        mock_cleanup.return_value = (True, "Cleanup OK")
 
         with patch("builtins.print"):
             result = orchestrator.run_finalization()
@@ -242,10 +273,18 @@ class TestOrchestratorFinalization(unittest.TestCase):
     @patch("check_protocol_compliance.check_todo_completion")
     @patch("check_protocol_compliance.check_hook_integrity")
     @patch("check_protocol_compliance.check_pr_exists")
+    @patch("check_protocol_compliance.check_pr_decomposition_closure")
+    @patch("check_protocol_compliance.check_child_pr_linkage")
+    @patch("check_protocol_compliance.check_handoff_pr_verification")
     @patch("check_protocol_compliance.check_beads_pr_sync")
+    @patch("check_protocol_compliance.check_workspace_cleanup")
     def test_run_finalization_blocked_by_stale_branches(
         self,
-        mock_beads,
+        mock_cleanup,
+        mock_sync,
+        mock_verification,
+        mock_linkage,
+        mock_decomposition,
         mock_pr,
         mock_hook,
         mock_todo,
@@ -275,7 +314,11 @@ class TestOrchestratorFinalization(unittest.TestCase):
         mock_todo.return_value = (True, "All tasks completed")
         mock_hook.return_value = (True, "Hooks intact")
         mock_pr.return_value = (True, "PR found")
-        mock_beads.return_value = (True, "PR Sync OK")
+        mock_decomposition.return_value = (True, "Protocol followed")
+        mock_linkage.return_value = (True, "Linkage OK")
+        mock_verification.return_value = (True, "Verification OK")
+        mock_sync.return_value = (True, "Sync OK")
+        mock_cleanup.return_value = (True, "Cleanup OK")
         
         # Simulating stale branches
         mock_prune.return_value = (False, "Stale branches detected: agent/old-feature")
@@ -310,8 +353,10 @@ class TestOrchestratorRetrospective(unittest.TestCase):
     @patch("check_protocol_compliance.check_wrapup_indicator_symmetry")
     @patch("check_protocol_compliance.check_wrapup_exclusivity")
     @patch("check_protocol_compliance.check_git_status")
+    @patch("check_protocol_compliance.inject_debrief_to_beads")
     def test_run_retrospective_success(
         self,
+        mock_inject,
         mock_git,
         mock_exclusivity,
         mock_symmetry,
@@ -326,6 +371,7 @@ class TestOrchestratorRetrospective(unittest.TestCase):
     ):
         """Test successful retrospective."""
         mock_reflect.return_value = (True, "Reflection captured")
+        mock_inject.return_value = (True, "Injected")
         mock_debrief.return_value = (True, "Debrief generated")
         mock_approval.return_value = (False, "Plan approval is stale")  # Stale means cleared
         mock_log.return_value = (True, "Log exists")

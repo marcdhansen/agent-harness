@@ -33,6 +33,18 @@
                     "validator": "check_workspace_integrity"
                 },
                 {
+                    "id": "rebase_status",
+                    "description": "Verify no hanging rebase or merge",
+                    "type": "BLOCKER",
+                    "validator": "check_rebase_status"
+                },
+                {
+                    "id": "stale_branches",
+                    "description": "Verify no stale or merged branches",
+                    "type": "WARNING",
+                    "validator": "check_closed_issue_branches"
+                },
+                {
                     "id": "planning_docs",
                     "description": "Verify planning documents exist (ROADMAP.md, ImplementationPlan.md)",
                     "type": "BLOCKER",
