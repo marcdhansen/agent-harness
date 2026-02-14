@@ -83,6 +83,9 @@ def main():
     parser.add_argument("--close", action="store_true", help="Close the current session")
     parser.add_argument("--status", action="store_true", help="Show session status")
     parser.add_argument(
+        "--fallback", action="store_true", help="Run manual fallback validation"
+    )
+    parser.add_argument(
         "--install-hooks", action="store_true", help="Install git policy enforcement hooks"
     )
     parser.add_argument("--mode", default="full", help="Session mode (simple/full)")
@@ -92,6 +95,14 @@ def main():
 
     if args.install_hooks:
         install_hooks()
+    elif args.fallback:
+        import subprocess
+        fallback_script = Path(__file__).parent / "src" / "agent_harness" / "scripts" / "fallback_validation.sh"
+        if fallback_script.exists():
+            subprocess.run([str(fallback_script)])
+        else:
+            print("⚠️ Fallback script not found in src/agent_harness/scripts/fallback_validation.sh")
+            print("Please perform manual checks per SOP.")
     elif args.init:
         issue_id = args.issue or get_active_issue_id()
         if not issue_id:
