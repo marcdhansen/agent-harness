@@ -1,18 +1,15 @@
-# Task: agent-2zl - Allow flexible branch naming and project IDs
+# Task: agent-harness-xns
 
 ## Objective
 
-The git_validator.py and other compliance checks strictly enforce 'agent-harness' prefix in several places. Generalize these to support various project prefixes.
+Harden Beads ID enforcement in session handoffs and summaries.
 
-## Tasks
+## Plan
 
-- [x] Generalize `check_branch_info` in global orchestrator
-- [x] Generalize `get_active_issue_id` regex in global orchestrator
-- [x] Generalize prune and closed issue checks in global orchestrator
-- [x] Sycn changes to local `src/agent_harness/compliance.py`
-- [x] Add comprehensive tests for flexible ID detection
-- [x] Verify all tests pass
-
-## Approval
-
-👍 APPROVED by Antigravity (Local context)
+1. [x] Implement check_protocol_compliance_reporting in local project.
+2. [x] Harden check_handoff_beads_id in local project.
+3. [x] Register new validator in local finalization node.
+4. [x] Add tests and verify passing.
+5. [x] Harden global Orchestrator validators.
+6. [x] Verify global Orchestrator passes with new validators.
+7. [x] Finalize and Push.
