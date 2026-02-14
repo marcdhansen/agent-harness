@@ -52,6 +52,12 @@
                     "validator": "check_todo_completion"
                 },
                 {
+                    "id": "protocol_compliance_reporting",
+                    "description": "Verify protocol compliance reporting in session summary",
+                    "type": "BLOCKER",
+                    "validator": "check_protocol_compliance_reporting"
+                },
+                {
                     "id": "wrapup_indicator_symmetry",
                     "description": "Verify 🏁 signal matches session completion state",
                     "type": "BLOCKER",
