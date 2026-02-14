@@ -8,7 +8,7 @@ import os
 
 # Add the orchestrator script path to sys.path
 orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"
-sys.path.append(str(orchestrator_path))
+sys.path.insert(0, str(orchestrator_path))
 
 # Import the functions to test
 try:
@@ -45,7 +45,7 @@ class TestOrchestratorGitStatus(unittest.TestCase):
 
         passed, msg = orchestrator.check_git_status(turbo=True)
         self.assertTrue(passed)
-        self.assertIn("Metadata changes only", msg)
+        self.assertIn("Documentation changes only (Turbo safe)", msg)
 
     @patch("subprocess.run")
     def test_git_status_code_change_escalation(self, mock_run):
