@@ -7,7 +7,7 @@ import pytest
 import sys
 import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 
 # Add the Orchestrator script path
 orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"
@@ -33,14 +33,23 @@ class TestGateReflection:
         assert passed is False
         assert "No recent reflection" in msg
 
+    @patch("validators.finalization_validator.json.load")
+    @patch("builtins.open", new_callable=mock_open)
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.stat")
-    def test_stale_reflection_blocked(self, mock_stat, mock_exists):
+    def test_stale_reflection_blocked(self, mock_stat, mock_exists, mock_file, mock_json_load):
         """Verify that stale reflection (>2 hours) is blocked."""
         if orchestrator is None:
             pytest.skip("Orchestrator not found")
 
         mock_exists.return_value = True
+        mock_json_load.return_value = {
+            "session_name": "test",
+            "outcome": "stale-check",
+            "technical_learnings": [],
+            "refactoring_candidates": []
+        }
+        
         # Mock mtime to be 3 hours ago
         mock_st = MagicMock()
         mock_st.st_mtime = time.time() - (3 * 3600)
@@ -50,14 +59,23 @@ class TestGateReflection:
         assert passed is False
         assert "No recent reflection" in msg
 
+    @patch("validators.finalization_validator.json.load")
+    @patch("builtins.open", new_callable=mock_open)
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.stat")
-    def test_recent_reflection_passes(self, mock_stat, mock_exists):
+    def test_recent_reflection_passes(self, mock_stat, mock_exists, mock_file, mock_json_load):
         """Verify that recent reflection (<2 hours) passes."""
         if orchestrator is None:
             pytest.skip("Orchestrator not found")
 
         mock_exists.return_value = True
+        mock_json_load.return_value = {
+            "session_name": "test",
+            "outcome": "recent-check",
+            "technical_learnings": [],
+            "refactoring_candidates": []
+        }
+        
         # Mock mtime to be 10 minutes ago
         mock_st = MagicMock()
         mock_st.st_mtime = time.time() - 600
