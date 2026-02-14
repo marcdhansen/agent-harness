@@ -10,10 +10,7 @@
                     "id": "feature_branch",
                     "description": "Verify on a feature branch",
                     "type": "BLOCKER",
-                    "validator": "check_branch_info",
-                    "args": [
-                        "feature"
-                    ]
+                    "validator": "check_branch_info"
                 },
                 {
                     "id": "task_tracked",
@@ -50,6 +47,12 @@
                     "description": "Verify progress log exists",
                     "type": "WARNING",
                     "validator": "check_progress_log_exists"
+                },
+                {
+                    "id": "harness_session",
+                    "description": "Verify active harness session",
+                    "type": "BLOCKER",
+                    "validator": "check_harness_session"
                 }
             ]
         }

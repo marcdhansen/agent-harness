@@ -319,7 +319,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
         mock_verification.return_value = (True, "Verification OK")
         mock_sync.return_value = (True, "Sync OK")
         mock_cleanup.return_value = (True, "Cleanup OK")
-        
+
         # Simulating stale branches
         mock_prune.return_value = (False, "Stale branches detected: agent/old-feature")
 
@@ -389,7 +389,7 @@ class TestOrchestratorRetrospective(unittest.TestCase):
             # 1. Path.home() / ".agent/progress-logs" -> returns h1
             # 2. h1 / "test-id.md" -> returns mock_log_file
             mock_home.return_value.__truediv__.return_value.__truediv__.return_value = mock_log_file
-            
+
             # Mock get_active_issue_id to ensure it matches the path we mocked
             with patch("check_protocol_compliance.get_active_issue_id") as mock_id:
                 mock_id.return_value = "test-id"

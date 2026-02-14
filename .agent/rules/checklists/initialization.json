@@ -69,6 +69,12 @@
                     "validator": "check_sop_simplification"
                 },
                 {
+                    "id": "harness_session",
+                    "description": "Verify active harness session exists",
+                    "type": "BLOCKER",
+                    "validator": "check_harness_session"
+                },
+                {
                     "id": "hook_integrity",
                     "description": "Verify git hook integrity",
                     "type": "BLOCKER",

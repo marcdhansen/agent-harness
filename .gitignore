@@ -16,3 +16,5 @@ build/
 *.db
 *.db-shm
 *.db-wal
+.reflection_input.json
+.agent/sessions/

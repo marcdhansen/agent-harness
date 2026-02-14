@@ -95,6 +95,12 @@
                     "description": "Verify Beads issue ID in debrief.md",
                     "type": "BLOCKER",
                     "validator": "check_handoff_beads_id"
+                },
+                {
+                    "id": "harness_session_finalization",
+                    "description": "Verify active harness session",
+                    "type": "BLOCKER",
+                    "validator": "check_harness_session"
                 }
             ]
         }

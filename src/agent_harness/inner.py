@@ -7,6 +7,10 @@ For users who don't need full SMP compliance, this is the entry point.
 
 from abc import ABC, abstractmethod
 from typing import Any
+import json
+
+from agent_harness.security import HardenedPrompt, ToolAuditor, EscapeDetector, SecurityException
+from agent_harness.session_tracker import SessionTracker
 
 
 class Tool(ABC):
@@ -135,6 +139,8 @@ When given a task:
 
 Always verify your changes work before finishing. Be concise in your responses."""
 
+HARDENED_SYSTEM_PROMPT = HardenedPrompt.build(DEFAULT_SYSTEM_PROMPT)
+
 
 class InnerHarness:
     """
@@ -155,6 +161,7 @@ class InnerHarness:
         llm_client: Any,
         tools: list[Tool] | None = None,
         system_prompt: str | None = None,
+        hardened: bool = True,
     ):
         """
         Initialize the inner harness.
@@ -164,10 +171,23 @@ class InnerHarness:
                        and returns a response with optional tool_calls.
             tools: List of Tool instances. Defaults to CORE_TOOLS (read, write, edit, bash).
             system_prompt: Custom system prompt. Defaults to minimal coding assistant prompt.
+            hardened: Whether to apply defense-in-depth hardening. Defaults to True.
         """
         self.llm = llm_client
         self.tools = {t.name: t for t in (tools or self.CORE_TOOLS)}
-        self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
+
+        base_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
+        self.system_prompt = HardenedPrompt.build(base_prompt) if hardened else base_prompt
+
+        self.auditor = ToolAuditor() if hardened else None
+        self.detector = EscapeDetector() if hardened else None
+
+        if hardened:
+            self.tracker = SessionTracker()
+            if not self.tracker.has_active_session():
+                # For inner harness, we might want to auto-init if we have context,
+                # but for strictness, we require prior initialization.
+                pass
 
     def _build_tools_schema(self) -> list[dict]:
         """Build tool schema for LLM."""
@@ -188,14 +208,19 @@ class InnerHarness:
         if tool_name not in self.tools:
             return f"Unknown tool: {tool_name}"
 
-        import json
-
         try:
             args = json.loads(tool_call.function.arguments)
         except json.JSONDecodeError:
             return f"Invalid tool arguments: {tool_call.function.arguments}"
 
-        return self.tools[tool_name].execute(**args)
+        result = self.tools[tool_name].execute(**args)
+
+        if self.auditor:
+            if not self.tracker.has_active_session():
+                raise SecurityException("No active harness session detected during tool execution.")
+            self.auditor.log_call(tool_name, args, result)
+
+        return result
 
     def run(self, user_message: str, max_iterations: int = 50) -> str:
         """
@@ -208,20 +233,34 @@ class InnerHarness:
         Returns:
             The final response from the LLM.
         """
+        if self.detector:
+            detected = self.detector.check_text(user_message)
+            if detected:
+                return f"Security Error: Potential bypass attempt detected in user message: {', '.join(detected)}"
+
         messages = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": user_message},
         ]
 
         for _ in range(max_iterations):
-            response = self.llm.invoke(
-                messages,
-                tools=self._build_tools_schema(),
-            )
+            try:
+                response = self.llm.invoke(
+                    messages,
+                    tools=self._build_tools_schema(),
+                )
+            except SecurityException as e:
+                return f"Security Violation: {e}"
+
+            # Check response content for escape indicators if detector is enabled
+            if self.detector:
+                detected = self.detector.check_text(str(response.content or ""))
+                if detected:
+                    return f"Security Error: Potential escape indicator detected in agent response: {', '.join(detected)}"
 
             # Check if LLM wants to use tools
             if not hasattr(response, "tool_calls") or not response.tool_calls:
-                return response.content  # Done - return final answer
+                return response.content or ""  # Done - return final answer
 
             # Add assistant message with tool calls
             messages.append(
@@ -234,7 +273,11 @@ class InnerHarness:
 
             # Execute each tool and add results
             for tool_call in response.tool_calls:
-                result = self._execute_tool(tool_call)
+                try:
+                    result = self._execute_tool(tool_call)
+                except SecurityException as e:
+                    return f"Security Violation: {e}"
+
                 messages.append(
                     {
                         "role": "tool",
