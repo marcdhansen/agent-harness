@@ -58,3 +58,68 @@ jobs:
       - name: Security scan (Bandit)
         # BLOCKS
         run: uv run bandit -r src/ -ll
+
+  beads-sync:
+    name: Sync Beads (Non-blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: '3.11'
+
+      - name: Install Beads
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+          if [ -f "$HOME/.local/bin/bd" ]; then
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+          fi
+          bd --version || echo "Beads installation skipped"
+
+      - name: Sync Beads
+        if: always()
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          git fetch origin beads-metadata || true
+          bd sync || echo "Beads sync failed - non-blocking"
+        continue-on-error: true
+
+      - name: Commit and push beads updates
+        if: always()
+        env:
+          BEADS_METADATA_BRANCH: "beads-metadata"
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          if [ -d ".beads" ] && [ -n "$(git status --porcelain .beads/ 2>/dev/null)" ]; then
+            mkdir -p /tmp/beads_backup
+            cp -a .beads/ /tmp/beads_backup/
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git fetch origin $BEADS_METADATA_BRANCH || true
+            rm -f .beads/.migration-hint-ts .beads/.sync.lock .beads/daemon.lock .beads/daemon.pid .beads/daemon.log 2>/dev/null || true
+            rm -rf .beads/
+            if git show-ref --verify --quiet refs/remotes/origin/$BEADS_METADATA_BRANCH; then
+              git checkout $BEADS_METADATA_BRANCH
+              git pull origin $BEADS_METADATA_BRANCH
+            else
+              git checkout -b $BEADS_METADATA_BRANCH
+            fi
+            rm -rf .beads/
+            cp -a /tmp/beads_backup/.beads/ .beads/
+            rm -f .beads/beads.db .beads/beads.db-shm .beads/beads.db-wal
+            rm -f .beads/.migration-hint-ts .beads/.sync.lock .beads/daemon.lock
+            rm -f .beads/daemon.pid .beads/daemon.log
+            git add .beads/
+            if git commit -m "beads: auto-sync from PR CI [skip ci]"; then
+              git push origin $BEADS_METADATA_BRANCH || echo "Push failed - non-blocking"
+            else
+              echo "No changes to commit in .beads"
+            fi
+          fi
+        continue-on-error: true
