@@ -75,6 +75,24 @@ graph TD
     Rules -. Enforce .-> Gate2
 ```
 
+## 🛠️ Development Tools
+
+### Local CI Simulation
+
+To catch failures before pushing to GitHub, run the local CI simulation script. This script runs linting (Ruff), formatting, security audits (Bandit), and the full test suite (Pytest).
+
+```bash
+./scripts/ci-local.sh
+```
+
+### Pre-commit Hooks
+
+The harness uses `pre-commit` to ensure code quality at commit time.
+
+```bash
+pre-commit install
+```
+
 ## 📦 Core Libraries
 
 - **LangGraph**: Workflow orchestration and state management.

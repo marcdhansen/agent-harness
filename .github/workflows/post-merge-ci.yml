@@ -40,6 +40,9 @@ jobs:
       - name: Sync Beads
         run: |
           export PATH="$HOME/.local/bin:$PATH"
+          if [ ! -f ".beads/beads.db" ]; then
+            bd init --quiet --prefix agent
+          fi
           git fetch origin beads-metadata || true
           bd sync
 
@@ -69,13 +72,13 @@ jobs:
               -l "ci-failure,automated,critical" \
               -d "Post-merge CI pipeline failed. Tests that passed in PR CI are now failing on main.
               
-**Failed checks:**$FAILED
-**Workflow:** ${{ github.workflow }}
-**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-**Commit:** ${{ github.sha }}
-**Triggered by:** @${{ github.actor }}
+              **Failed checks:**$FAILED
+              **Workflow:** ${{ github.workflow }}
+              **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              **Commit:** ${{ github.sha }}
+              **Triggered by:** @${{ github.actor }}
 
-Please investigate immediately."
+              Please investigate immediately."
           fi
 
       - name: Extract linked issues from commits
@@ -119,6 +122,11 @@ Please investigate immediately."
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           if [ -n "$(git status --porcelain .beads/)" ]; then
+            # Save current beads state
+            mkdir -p /tmp/beads_backup
+            cp -r .beads/* /tmp/beads_backup/ 2>/dev/null || true
+            cp .beads/.* /tmp/beads_backup/ 2>/dev/null || true
+            
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             
@@ -130,7 +138,15 @@ Please investigate immediately."
               git checkout -b $BEADS_METADATA_BRANCH
             fi
             
+            # Restore saved beads state and clean up untracked artifacts that cause conflicts
+            rm -f .beads/beads.db .beads/beads.db-shm .beads/beads.db-wal
+            cp -r /tmp/beads_backup/* .beads/ 2>/dev/null || true
+            cp /tmp/beads_backup/.* .beads/ 2>/dev/null || true
+            
             git add .beads/
-            git commit -m "beads: auto-sync from post-merge CI [skip ci]"
-            git push origin $BEADS_METADATA_BRANCH
+            if git commit -m "beads: auto-sync from post-merge CI [skip ci]"; then
+              git push origin $BEADS_METADATA_BRANCH
+            else
+              echo "No changes to commit in .beads after restore."
+            fi
           fi
