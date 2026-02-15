@@ -44,9 +44,377 @@ This guide explains how to integrate [Beads](https://github.com/steveyegge/beads
 
 See "Critical Configuration" section below for detailed instructions.
 
+## Implementation Order (Safe Deployment)
+
+**Follow this sequence for zero-risk deployment:**
+
+### The 6-Step Rollout
+
+```
+1. CI skip headers        → No-op (safe, defense in depth)
+2. Pre-commit stages      → Config change (local enforcement only)
+3. New PR CI workflow     → Test in feature branch
+3.5 Parallel run          → Both workflows side-by-side (1-2 days)
+4. Delete old workflow    → After comparison proves equivalence
+5. Post-merge CI          → After PR CI validated
+6. Full PR test           → End-to-end validation
+```
+
+### Why This Order?
+
+- ✅ **Incremental** - Each step independently testable
+- ✅ **Safe** - Easy rollback at any point
+- ✅ **Validated** - Parallel run catches edge cases
+- ✅ **No big bang** - Gradual transition with monitoring
+
+### Step 3.5: Parallel Run Strategy (Critical!)
+
+**Before deleting your old workflow, run both in parallel:**
+
+**Duration:** 1-2 days (5-10 PRs minimum)
+
+**Comparison checklist:**
+
+```bash
+# scripts/compare-workflows.sh
+#!/bin/bash
+
+echo "Comparing old vs new workflow results..."
+
+# Get last 10 runs of each workflow
+echo "Old workflow (linting.yaml or similar):"
+gh run list --workflow=linting.yaml --limit=10 --json conclusion,name,createdAt
+
+echo ""
+echo "New workflow (pr-ci.yml):"
+gh run list --workflow=pr-ci.yml --limit=10 --json conclusion,name,createdAt
+
+echo ""
+echo "Manual checks:"
+echo "✓ Same pass/fail outcomes?"
+echo "✓ Similar runtime (±20%)?"
+echo "✓ New warnings caught anything old missed?"
+echo "✓ Any false positives in new workflow?"
+echo "✓ All blocking checks still blocking?"
+```
+
+**What to look for:**
+
+| Scenario | Action |
+|----------|--------|
+| ✅ Both pass | Good - workflows equivalent |
+| ✅ Both fail | Good - workflows equivalent |
+| ⚠️ Old passes, new fails | Investigate - new workflow may be stricter (good) |
+| 🚨 Old fails, new passes | **CRITICAL** - New workflow missing checks! |
+
+**Only proceed to step 4 when confident both workflows are equivalent.**
+
+### Step-by-Step Details
+
+#### Step 1: Add CI Skip Headers
+
+Add to all pre-commit hook scripts:
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit or in hook script
+
+# CI SKIP HEADER - defense in depth
+if [[ "$GITHUB_ACTIONS" == "true" ]] || [[ "$CI" == "true" ]]; then
+    echo "ℹ️ Skipping in CI (pre-commit hooks are local development tools)"
+    exit 0
+fi
+
+# Rest of hook logic...
+```
+
+**Test:** Hooks should work locally, skip in CI
+
+#### Step 2: Configure Pre-Commit Stages
+
+Update `.pre-commit-config.yaml`:
+
+```yaml
+# Only run hooks on local commits, not in CI
+default_stages: [commit]
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        stages: [commit]  # Local only
+      - id: ruff-format
+        stages: [commit]  # Local only
+```
+
+**Test:** `pre-commit run --all-files` should run locally, skip when `CI=true`
+
+#### Step 3: Create New PR CI Workflow
+
+See "Setup" section below for full workflow examples.
+
+**Test:** Create feature branch, open PR, verify new workflow runs
+
+#### Step 3.5: Run Both Workflows in Parallel
+
+Keep old workflow enabled alongside new workflow.
+
+**Monitor for 1-2 days:**
+- Compare outcomes
+- Check for discrepancies
+- Validate new workflow catches everything
+
+#### Step 4: Delete Old Workflow
+
+Only after parallel run proves equivalence:
+
+```bash
+git rm .github/workflows/linting.yaml
+git commit -m "ci: remove old linting workflow (replaced by pr-ci.yml)"
+```
+
+#### Step 5: Create Post-Merge CI
+
+See "Post-Merge CI" section below.
+
+**Test:** Merge a PR, verify post-merge workflow runs
+
+#### Step 6: Full PR Test
+
+Create test PR that:
+- Passes all checks
+- Triggers issue close on merge
+- Validates end-to-end flow
+
 ## Setup
 
-### Step 1: Create GitHub Actions Workflow
+### Language-Specific Examples
+
+This guide provides examples for both **Node.js/npm** and **Python/pytest/ruff** projects. Choose the appropriate section for your stack.
+
+### Quick Comparison
+
+| Aspect | Node.js/npm | Python/pytest/ruff |
+|--------|-------------|-------------------|
+| **Linter** | ESLint (`npm run lint`) | Ruff (`ruff check .`) |
+| **Formatter** | Prettier (`npm run format`) | Ruff Format (`ruff format .`) |
+| **Unit Tests** | Jest/Vitest (`npm test`) | pytest (`pytest tests/unit`) |
+| **Security** | npm audit | Bandit (`bandit -r src/`) |
+| **Type Checking** | TypeScript (`tsc`) | mypy (`mypy src/`) (optional) |
+| **Pre-commit** | Husky + lint-staged | pre-commit framework |
+
+### Key Differences
+
+**Node.js:**
+- Uses `package.json` scripts (e.g., `npm run lint`)
+- Pre-commit typically via Husky
+- `npm audit` for security
+
+**Python:**
+- Direct tool invocation (e.g., `ruff check .`)
+- Pre-commit via `.pre-commit-config.yaml`
+- Bandit for security scanning
+- pytest with coverage via `--cov` flag
+
+---
+
+## Node.js/TypeScript Projects
+
+### Step 1: Create GitHub Actions Workflow (Node)
+
+Create `.github/workflows/pr-ci.yml`:
+
+```yaml
+name: PR Validation (Node)
+
+on:
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install beads
+        env:
+          BEADS_VERSION: "0.29.0"
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v${BEADS_VERSION}/scripts/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      # ============================================
+      # QUALITY VERIFICATION (Non-Blocking)
+      # ============================================
+      - name: Verify linting
+        run: |
+          if npm run lint; then
+            echo "✅ Linting passed"
+          else
+            echo "::warning::Linting failed - pre-commit hook may not have run"
+          fi
+        continue-on-error: true
+      
+      - name: Verify formatting
+        run: |
+          if npm run format:check; then
+            echo "✅ Formatting passed"
+          else
+            echo "::warning::Formatting failed - run: npm run format"
+          fi
+        continue-on-error: true
+      
+      # ============================================
+      # FUNCTIONAL GATES (Blocking)
+      # ============================================
+      - name: Run unit tests
+        run: npm run test:unit
+      
+      - name: Run integration tests
+        run: npm run test:integration
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Security scan
+        run: npm audit --audit-level=moderate
+```
+
+---
+
+## Python Projects
+
+### Step 1: Create GitHub Actions Workflow (Python)
+
+Create `.github/workflows/pr-ci.yml`:
+
+```yaml
+name: PR Validation (Python)
+
+on:
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install beads
+        env:
+          BEADS_VERSION: "0.29.0"
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v${BEADS_VERSION}/scripts/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov ruff bandit
+      
+      # ============================================
+      # QUALITY VERIFICATION (Non-Blocking)
+      # ============================================
+      - name: Verify linting
+        run: |
+          echo "::group::Linting Verification"
+          if ruff check .; then
+            echo "✅ Linting passed"
+          else
+            echo "::warning::Linting failed - pre-commit hook may not have run"
+            echo "Fix with: ruff check --fix . && git commit --amend"
+          fi
+          echo "::endgroup::"
+        continue-on-error: true
+      
+      - name: Verify formatting
+        run: |
+          echo "::group::Formatting Verification"
+          if ruff format --check .; then
+            echo "✅ Formatting passed"
+          else
+            echo "::warning::Formatting issues detected"
+            echo "Fix with: ruff format . && git commit --amend"
+          fi
+          echo "::endgroup::"
+        continue-on-error: true
+      
+      # ============================================
+      # FUNCTIONAL GATES (Blocking)
+      # ============================================
+      - name: Run unit tests
+        run: pytest tests/unit -v --cov=src --cov-report=term
+      
+      - name: Run integration tests
+        run: pytest tests/integration -v
+      
+      - name: Security scan
+        run: bandit -r src/ -ll
+      
+      - name: Type checking (if using mypy)
+        run: mypy src/
+        continue-on-error: true  # Optional: make this blocking if desired
+```
+
+### Pre-Commit Configuration (Python)
+
+`.pre-commit-config.yaml`:
+
+```yaml
+default_stages: [commit]  # Only run on local commits
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+        stages: [commit]
+      
+      - id: ruff-format
+        stages: [commit]
+  
+  - repo: local
+    hooks:
+      - id: pytest-unit
+        name: pytest (unit tests only)
+        entry: pytest tests/unit -v
+        language: system
+        pass_filenames: false
+        stages: [commit]
+```
+
+---
+
+## Post-Merge CI (Both Stacks)
+
+### Node.js Post-Merge CI
 
 Create `.github/workflows/beads-integration.yml`:
 
@@ -250,6 +618,271 @@ cc: @${{ github.actor }}" \
           echo "Created issue: $ISSUE_ID"
           echo "issue_created=true" >> $GITHUB_OUTPUT
 ```
+
+### Python Post-Merge CI
+
+Create `.github/workflows/post-merge-ci.yml`:
+
+```yaml
+name: Post-Merge Safety Net (Python)
+
+on:
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: write
+
+jobs:
+  safety-net:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 10  # For potential auto-revert
+      
+      - name: Install beads
+        env:
+          BEADS_VERSION: "0.29.0"
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v${BEADS_VERSION}/scripts/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Initialize beads
+        run: |
+          bd init --quiet
+          bd sync
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov bandit
+      
+      # ============================================
+      # SAFETY NET CHECKS (Non-Blocking)
+      # ============================================
+      - name: Run unit tests
+        id: pytest_unit
+        run: pytest tests/unit -v --cov=src
+        continue-on-error: true
+      
+      - name: Run integration tests
+        id: pytest_integration
+        run: pytest tests/integration -v
+        continue-on-error: true
+      
+      - name: Security scan
+        id: security
+        run: bandit -r src/ -ll
+        continue-on-error: true
+      
+      # Extract referenced issues
+      - name: Extract issues
+        id: extract_issues
+        env:
+          ISSUE_PATTERN: ${{ vars.BEADS_ISSUE_PATTERN || 'bd-[a-f0-9]{4,6}(?:\.\d+)?' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commits = context.payload.commits || [];
+            const pattern = process.env.ISSUE_PATTERN;
+            const issueRegex = new RegExp(pattern, 'gi');
+            const issues = new Set();
+            
+            for (const commit of commits) {
+              const matches = commit.message.match(issueRegex);
+              if (matches) {
+                matches.forEach(id => issues.add(id));
+              }
+            }
+            
+            return Array.from(issues);
+      
+      # Close issues if all checks passed
+      - name: Close issues on success
+        if: |
+          steps.pytest_unit.outcome == 'success' &&
+          steps.pytest_integration.outcome == 'success' &&
+          steps.security.outcome == 'success'
+        run: |
+          ISSUES='${{ steps.extract_issues.outputs.result }}'
+          
+          if [ "$ISSUES" != "[]" ]; then
+            echo "$ISSUES" | jq -r '.[]' | while read -r issue_id; do
+              bd close "$issue_id" --reason "✅ All post-merge checks passed"
+            done
+          fi
+      
+      # Create P0 issue if critical checks fail
+      - name: Create critical issue on failure
+        if: |
+          steps.pytest_unit.outcome == 'failure' ||
+          steps.pytest_integration.outcome == 'failure' ||
+          steps.security.outcome == 'failure'
+        run: |
+          FAILED=""
+          [ "${{ steps.pytest_unit.outcome }}" = "failure" ] && FAILED="$FAILED\n- Unit tests"
+          [ "${{ steps.pytest_integration.outcome }}" = "failure" ] && FAILED="$FAILED\n- Integration tests"
+          [ "${{ steps.security.outcome }}" = "failure" ] && FAILED="$FAILED\n- Security scan"
+          
+          bd create "🚨 CRITICAL: Post-merge CI failure on ${{ github.ref_name }}" \
+            -t bug \
+            -p 0 \
+            -l "ci-failure,critical,${{ github.ref_name }}-broken" \
+            -d "Tests that passed in PR CI are now failing on ${{ github.ref_name }}.
+
+**Failed checks:**$FAILED
+
+**Possible causes:**
+- Merge conflict resolution issue
+- Environment differences between PR CI and post-merge
+- Race condition in tests
+- Infrastructure problem
+
+**Action required:** Investigate immediately and either fix forward or revert.
+
+**Commit:** ${{ github.sha }}
+**Author:** @${{ github.actor }}
+**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      
+      # Commit beads changes
+      - name: Commit beads changes
+        if: always()
+        env:
+          BEADS_BRANCH: ${{ vars.BEADS_METADATA_BRANCH || 'beads-metadata' }}
+        run: |
+          if [ -z "$(git status --porcelain .beads/)" ]; then
+            exit 0
+          fi
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .beads/
+          
+          CURRENT_BRANCH="${{ github.ref_name }}"
+          
+          if git commit -m "beads: auto-update from post-merge CI [skip ci]" && \
+             git push origin "$CURRENT_BRANCH" 2>&1 | tee /tmp/push.log; then
+            echo "✓ Pushed to $CURRENT_BRANCH"
+          else
+            if grep -q "protected branch" /tmp/push.log; then
+              git reset HEAD~1
+              git fetch origin "$BEADS_BRANCH" || git checkout -b "$BEADS_BRANCH"
+              git checkout "$BEADS_BRANCH"
+              git add .beads/
+              git commit -m "beads: auto-update from post-merge CI [skip ci]"
+              git push origin "$BEADS_BRANCH"
+              echo "✓ Pushed to $BEADS_BRANCH"
+            fi
+          fi
+```
+
+---
+
+## Workflow Behavior Summary
+
+### Complete Check Matrix
+
+This table shows how each check behaves across all three CI stages:
+
+| Check Type | Pre-Commit (Local) | PR CI | Post-Merge CI |
+|------------|-------------------|-------|---------------|
+| **Linting** (ruff/eslint) | ✅ **Blocks commit** | ⚠️ **Warns** (non-blocking) | ❌ **Skip** (not needed) |
+| **Formatting** (ruff format/prettier) | ✅ **Blocks commit** | ❌ **Skip** (auto-fixable) | ❌ **Skip** |
+| **Unit Tests** (pytest/jest) | ✅ **Blocks commit** | ✅ **Blocks merge** | 📋 **Create P0 issue** (if fails) |
+| **Integration Tests** | ❌ Skip (can't run locally) | ✅ **Blocks merge** | 📋 **Create P0 issue** (if fails) |
+| **E2E Tests** | ❌ Skip (can't run locally) | ✅ **Blocks merge** | 📋 **Create P0 issue** (if fails) |
+| **Security Scan** | ❌ Skip (requires tools) | ✅ **Blocks merge** | 📋 **Create P0 issue** (if fails) |
+| **Type Checking** (mypy/tsc) | ✅ **Blocks commit** | ✅ **Blocks merge** | 📋 **Create P0 issue** (if fails) |
+
+### Behavior Definitions
+
+- ✅ **Blocks** - Failure prevents the action (commit/merge/etc.)
+- ⚠️ **Warns** - Failure logs warning but continues
+- 📋 **Create Issue** - Failure creates beads issue but doesn't block
+- ❌ **Skip** - Check doesn't run at this stage
+
+### Why This Architecture?
+
+**Pre-Commit (Local):**
+- **Philosophy:** Catch everything early, fail fast
+- **Goal:** Prevent broken code from entering git
+- **Trade-off:** Slightly slower commits, but cleaner history
+
+**PR CI:**
+- **Philosophy:** Gate on functionality, warn on style
+- **Goal:** Prevent broken code from reaching main
+- **Trade-off:** Longer PR cycle, but protected main branch
+
+**Post-Merge CI:**
+- **Philosophy:** Safety net, never block
+- **Goal:** Detect unexpected issues, track for fixes
+- **Trade-off:** Issues need manual resolution, but no blocking
+
+### Python-Specific Notes
+
+**Ruff combines linting + formatting:**
+```bash
+# Pre-commit runs both
+ruff check --fix .    # Lint with auto-fix
+ruff format .         # Format
+
+# PR CI only verifies linting (formatting is trivial)
+ruff check .          # Verify (warns if fails)
+
+# Post-merge CI skips both (already verified)
+```
+
+**Pytest structure matters:**
+```bash
+# Pre-commit: Only fast unit tests
+pytest tests/unit -v
+
+# PR CI: Unit + integration
+pytest tests/unit -v
+pytest tests/integration -v
+
+# Post-merge: Re-run critical checks
+pytest tests/unit -v --cov=src
+pytest tests/integration -v
+```
+
+### Node-Specific Notes
+
+**ESLint + Prettier separation:**
+```bash
+# Pre-commit runs both
+npm run lint:fix      # ESLint with auto-fix
+npm run format        # Prettier
+
+# PR CI only verifies linting
+npm run lint          # Verify (warns if fails)
+
+# Post-merge CI skips both
+```
+
+**Test structure:**
+```bash
+# Pre-commit: Fast unit tests only
+npm run test:unit
+
+# PR CI: All tests
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+
+# Post-merge: Re-run critical
+npm run test:unit
+npm run test:integration
+```
+
+---
 
 ### Step 2: Update Agent Instructions
 
@@ -1162,6 +1795,12 @@ bd import      # Re-import from JSONL if needed
 
 ## FAQ
 
+**Q: Should I use the Node.js or Python workflow examples?**  
+A: Use the workflow that matches your project's language. The concepts are identical - only the tool commands differ. If you have both Node and Python in a monorepo, run both workflows or combine them into a single workflow.
+
+**Q: Can I mix pre-commit frameworks (Husky for Node, pre-commit for Python)?**  
+A: Yes! In a monorepo, you can use Husky for Node code and `.pre-commit-config.yaml` for Python. Just ensure both are configured with `stages: [commit]` or CI skip headers.
+
 **Q: Can multiple agents work on different issues simultaneously?**  
 A: Yes! Beads uses hash-based IDs to prevent collisions. Each agent's changes sync via git.
 
@@ -1197,8 +1836,16 @@ For issues with this integration:
 
 ---
 
-**Version:** 2.0 ✨  
+**Version:** 2.1 ✨  
 **Last Updated:** 2025-02-14  
+
+**Changes in v2.1:**  
+- ✅ Safe deployment implementation order (6-step rollout)
+- ✅ Parallel run strategy for workflow validation
+- ✅ Python/pytest/ruff examples alongside Node.js
+- ✅ Complete workflow behavior matrix (pre-commit/PR/post-merge)
+- ✅ Language-specific notes and comparison table
+
 **Changes in v2.0:**  
 - ✅ Configurable issue ID regex patterns  
 - ✅ Protected branch auto-detection and handling  
