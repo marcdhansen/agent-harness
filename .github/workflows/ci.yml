@@ -69,12 +69,12 @@ jobs:
               -l "ci-failure,automated" \
               -d "CI/CD pipeline failed.
               
-**Workflow:** ${{ github.workflow }}
-**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-**Commit:** ${{ github.sha }}
-**Triggered by:** @${{ github.actor }}
+              **Workflow:** ${{ github.workflow }}
+              **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              **Commit:** ${{ github.sha }}
+              **Triggered by:** @${{ github.actor }}
 
-Please review the logs and fix the stability issue."
+              Please review the logs and fix the stability issue."
           fi
 
       - name: Extract linked issues from commits

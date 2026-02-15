@@ -69,13 +69,13 @@ jobs:
               -l "ci-failure,automated,critical" \
               -d "Post-merge CI pipeline failed. Tests that passed in PR CI are now failing on main.
               
-**Failed checks:**$FAILED
-**Workflow:** ${{ github.workflow }}
-**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-**Commit:** ${{ github.sha }}
-**Triggered by:** @${{ github.actor }}
+              **Failed checks:**$FAILED
+              **Workflow:** ${{ github.workflow }}
+              **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              **Commit:** ${{ github.sha }}
+              **Triggered by:** @${{ github.actor }}
 
-Please investigate immediately."
+              Please investigate immediately."
           fi
 
       - name: Extract linked issues from commits
