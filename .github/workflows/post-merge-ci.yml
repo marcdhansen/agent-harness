@@ -42,9 +42,10 @@ jobs:
       - name: Sync Beads
         id: sync
         run: |
-          # Try to sync but don't fail if DB init is weird in CI
+          # Use no-db mode since config.yaml has no-db: true
+          export PATH="$HOME/.local/bin:$PATH"
           git fetch origin beads-metadata || true
-          bd sync || bd --no-db sync || echo "Initial sync failed, will attempt to close anyway"
+          bd sync || echo "Initial sync failed, will attempt to close anyway"
         continue-on-error: true
 
       - name: Run Safety Net Tests
@@ -114,6 +115,7 @@ jobs:
               echo "Closing linked issue: $issue_id"
               bd close "$issue_id" --reason "✅ CI/CD passed successfully [skip ci]" || true
             done
+            bd sync || true
           fi
 
       - name: Commit and push beads updates
@@ -135,7 +137,8 @@ jobs:
             # Fetch metadata branch
             git fetch origin $BEADS_METADATA_BRANCH || true
             
-            # CRITICAL: Remove .beads before checkout to avoid untracked file conflicts
+            # CRITICAL: Remove .beads and ALL artifacts before checkout to avoid conflicts
+            rm -f .beads/.migration-hint-ts .beads/.sync.lock .beads/daemon.lock .beads/daemon.pid .beads/daemon.log 2>/dev/null || true
             rm -rf .beads/
             
             if git show-ref --verify --quiet refs/remotes/origin/$BEADS_METADATA_BRANCH; then
@@ -145,10 +148,13 @@ jobs:
               git checkout -b $BEADS_METADATA_BRANCH
             fi
             
-            # Restore saved beads state and clean up runtime artifacts
+            # Restore saved beads state and clean up ALL runtime artifacts
             rm -rf .beads/
             cp -a /tmp/beads_backup/.beads/ .beads/
-            rm -f .beads/beads.db .beads/beads.db-shm .beads/beads.db-wal .beads/.migration-hint-ts
+            # Remove ALL runtime/temporary artifacts that shouldn't be committed
+            rm -f .beads/beads.db .beads/beads.db-shm .beads/beads.db-wal
+            rm -f .beads/.migration-hint-ts .beads/.sync.lock .beads/daemon.lock
+            rm -f .beads/daemon.pid .beads/daemon.log
             
             git add .beads/
             if git commit -m "beads: auto-sync from post-merge CI [skip ci]"; then
