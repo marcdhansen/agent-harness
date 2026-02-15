@@ -42,3 +42,4 @@ echo "- ✅ Both pass: Good - equivalent"
 echo "- ✅ Both fail: Good - equivalent"
 echo "- ⚠️ Old passes, new fails: Investigate - new workflow may be stricter (good)"
 echo "- 🚨 Old fails, new passes: CRITICAL - New workflow missing checks!"
+# Triggering CI maturation validation
