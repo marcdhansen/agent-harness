@@ -2,7 +2,7 @@ name: Post-Merge CI
 
 on:
   push:
-    branches: [main, task/harden-ci-failure-handler]
+    branches: [main]
 
 permissions:
   contents: write
@@ -49,17 +49,16 @@ jobs:
           bd sync || echo "Initial sync failed, will attempt to close anyway"
         continue-on-error: true
 
-      - name: Run Safety Net Tests (Forced failure)
+      - name: Run Safety Net Tests
         id: tests
-        run: exit 1
+        run: uv run pytest tests/
         
       - name: Security scan (Bandit)
         id: security
         run: uv run bandit -r src/ -ll
-        continue-on-error: true
 
       - name: Handle CI Failure
-        if: failure()
+        if: failure() || steps.sync.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
