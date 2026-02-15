@@ -1,54 +1,41 @@
-# Implementation Plan - Hardening Agent Harness (agent-gbv.13)
+# Implementation Plan - Enforce Retrospective as strict BLOCKER (agent-harness-6ec)
 
 ## Problem
 
-Agent harnesses are vulnerable to bypass attempts via prompt injection, tool evasion, and state manipulation. Current implementation in `InnerHarness` is minimalist and lacks active enforcement.
+The Retrospective phase in the Orchestrator currently uses `WARNING` for several key checks (e.g., `inject_debrief_to_beads`). This allows agents to finalize sessions even if strategic learning and handoff documentation are incomplete. To maintain high-quality documentation and SOP compliance, all retrospective checks must be promoted to `BLOCKER`.
 
 ## Proposed Changes
 
-1. **Core Tool Registry Hardening**:
-    * Implement an explicit `ToolRegistry` that validates tools before execution.
-    * Ensure no tools outside the whitelist can be invoked.
+### 1. Update Retrospective Checklist (`.agent/rules/checklists/retrospective.json`)
 
-2. **Prompt Engineering Defense-in-Depth**:
-    * Implement "Sandwich Constraints" in `InnerHarness`.
-    * Add "Anti-Jailbreak" patterns to the system prompt.
-    * Enforce a "Tool-Only" mandate in the prompt instructions.
+- Change `inject_debrief_to_beads` from `WARNING` to `BLOCKER`.
+- Ensure all other checks in the `retrospective` phase are set to `BLOCKER`.
 
-3. **Behavioral Monitoring & Auditing**:
-    * Implement `ToolAuditor` to log all tool calls and detect suspicious patterns (e.g., excessive bash usage, sensitive file access).
-    * Implement `EscapeDetector` to scan for bypass keywords in user input and agent responses.
+### 2. Verify Orchestrator Enforcement (`src/agent_harness/nodes/finalization.py`)
 
-4. **State Validation**:
-    * Introduce basic Pydantic validation for internal agent states to prevent out-of-bounds transitions.
+- Review `retrospective_node` to ensure it correctly transitions to `COMPLETE` only if `passed` is true (no blockers).
+- Verify that the `ChecklistManager.run_phase` correctly identifies any `BLOCKER` failures as making `passed = False`.
+
+### 3. Verification Plan
+
+#### Automated Tests
+
+- Create a new test file `tests/test_retrospective_enforcement.py` that:
+  - Mocks the `ChecklistManager`.
+  - Verifies that a failed `inject_debrief_to_beads` (now a blocker) results in `passed=False` and prevents session completion.
+- Run `pytest tests/test_checklists.py` to ensure core checklist logic remains intact.
+
+#### Manual Verification
+
+- Run the orchestrator in a test environment.
+- Intentionally fail a retrospective check (e.g., provide an invalid Beads ID in `debrief.md`).
+- Verify that the orchestrator blocks finalization.
 
 ## Blast Radius Analysis
 
-* **src/agent_harness/inner.py**: Primary impact. The `InnerHarness` class will be updated to use the new security layers.
-* **src/agent_harness/state.py**: Minor impact. Updating state definitions to support validation.
-* **New files**: `src/agent_harness/security.py` (or similar) to house the hardening logic.
-* **Backward Compatibility**: The new security features should be opt-in or transparent for existing users of `InnerHarness`.
+- **Low**: This change only affects the Retrospective phase of the Orchestrator. It does not touch core agent logic or tool execution.
+- **Impact**: Any agent (including myself) will now be blocked if retrospective steps fail.
 
-## Verification Plan
+## Rollback Plan
 
-1. **Red Team Unit Tests**:
-   * Test various prompt injection strings (e.g., "Ignore previous instructions").
-   * Test tool evasion attempts (e.g., "Tell me the file content instead of using read").
-   * Verify `ToolAuditor` catches suspicious bash commands.
-2. **Integration Tests**:
-   * Run a full loop with a simulated "malicious" agent and verify it's blocked.
-
-## Tasks
-
-* [x] Create `src/agent_harness/security.py` with `ToolAuditor` and `EscapeDetector`.
-* [x] Update `InnerHarness` in `src/agent_harness/inner.py` to incorporate security layers.
-* [x] Implement hardened prompt templates.
-* [x] Add comprehensive tests for bypass prevention.
-
-## Status
-
-* **agent-gbv.13**: Work completed, PR #27 created, issue set to `in_review`.
-
-## Completion Note
-
-Layer 2 and Layer 3 security measures have been successfully deployed. The harness now requires an active session, audits all tool calls, and scans for escape attempts. This implementation plan is now closed.
+- Revert the changes to `.agent/rules/checklists/retrospective.json` (change `BLOCKER` back to `WARNING`).

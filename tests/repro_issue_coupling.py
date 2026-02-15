@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# Add orchestrator script path
-orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"
+# Add the orchestrator script path to sys.path
+orchestrator_path = Path(__file__).parent / "orchestrator_mirror"
 sys.path.append(str(orchestrator_path))
 
 from validators.git_validator import get_active_issue_id  # noqa: E402

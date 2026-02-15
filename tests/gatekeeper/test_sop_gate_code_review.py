@@ -6,13 +6,13 @@ from pathlib import Path
 
 class TestSOPGateCodeReview(unittest.TestCase):
     def setUp(self):
+        # Use mirrored orchestrator script relative to test file
+        # This test is in tests/gatekeeper/
         self.orchestrator = (
-            Path.home()
-            / ".gemini/antigravity/skills/Orchestrator/scripts/check_protocol_compliance.py"
+            Path(__file__).parents[2] / "tests/orchestrator_mirror/check_protocol_compliance.py"
         )
-        self.code_review_script = (
-            Path.home() / ".gemini/antigravity/skills/code-review/scripts/code_review.py"
-        )
+        # code_review_script is not mirrored, so it will likely fail if used.
+        # But test only runs orchestrator.
 
     def test_finalization_blocks_without_code_review(self):
         """Test that finalization fails if code review has not been passed (or script fails)."""

@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Add the Orchestrator script path
-orchestrator_path = Path.home() / ".gemini/antigravity/skills/Orchestrator/scripts"
+orchestrator_path = Path(__file__).parents[2] / "tests/orchestrator_mirror"
 sys.path.insert(0, str(orchestrator_path))
 
 try:

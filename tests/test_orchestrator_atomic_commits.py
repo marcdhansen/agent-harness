@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Add Orchestrator script path to sys.path
-orchestrator_path = Path("/Users/marchansen/.gemini/antigravity/skills/Orchestrator/scripts")
-sys.path.append(str(orchestrator_path))
+orchestrator_path = Path(__file__).parent / "orchestrator_mirror"
+sys.path.insert(0, str(orchestrator_path))
 
 from check_protocol_compliance import validate_atomic_commits  # noqa: E402
 

@@ -2,6 +2,7 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -1156,18 +1157,20 @@ def inject_debrief_to_beads(*args) -> tuple[bool, str]:
     # Inject using bd comments add
     try:
         # We'll use a temporary file to avoid shell expansion issues with large content
-        temp_debrief = Path("/tmp/debrief_to_inject.md")
-        temp_debrief.write_text(injection_content)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as temp_debrief:
+            temp_debrief.write(injection_content)
+            temp_path = Path(temp_debrief.name)
 
-        result = subprocess.run(
-            ["bd", "comments", "add", issue_id, "-f", str(temp_debrief)],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-
-        if temp_debrief.exists():
-            temp_debrief.unlink()
+        try:
+            result = subprocess.run(
+                ["bd", "comments", "add", issue_id, "-f", str(temp_path)],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+        finally:
+            if temp_path.exists():
+                temp_path.unlink()
 
         if result.returncode == 0:
             return True, f"Injected debrief content into issue '{issue_id}'"
