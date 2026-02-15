@@ -50,3 +50,12 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.3",
+]
+
+[tool.bandit]
+skips = ["B101", "B603", "B607", "B404", "B110"]
+exclude_dirs = ["tests"]
