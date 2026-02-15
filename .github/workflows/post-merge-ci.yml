@@ -52,8 +52,7 @@ jobs:
       - name: Run Safety Net Tests (Forced failure)
         id: tests
         run: exit 1
-        continue-on-error: true
-
+        
       - name: Security scan (Bandit)
         id: security
         run: uv run bandit -r src/ -ll
