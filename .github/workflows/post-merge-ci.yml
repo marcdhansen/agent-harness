@@ -114,6 +114,8 @@ jobs:
               echo "Closing linked issue: $issue_id"
               bd close "$issue_id" --reason "✅ CI/CD passed successfully [skip ci]" || true
             done
+            # Force sync to JSONL to ensure changes are committed
+            bd sync || true
           fi
 
       - name: Commit and push beads updates
