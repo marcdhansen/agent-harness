@@ -1,44 +1,29 @@
-# Task: Mandate Full SOP for SOP Infrastructure Code Changes (agent-harness-7sy)
+# Task: agent-harness-6ec - Enforce Retrospective as strict BLOCKER
 
 ## Objective
 
-Enforce the full SOP process (feature branch, PR, code review) for any code changes to SOP infrastructure, closing a gap in the current `sop-modification` skill.
+Promote all retrospective checks to `BLOCKER` to ensure mandatory compliance with strategic learning and handoff documentation.
 
-## Implementation Details
+## Todos
 
-### 1. Detection Logic
+- [x] Update `.agent/rules/checklists/retrospective.json` to promote warnings to blockers <!-- id: 0 -->
+- [x] Verify `src/agent_harness/nodes/finalization.py` enforcement logic <!-- id: 1 -->
+- [x] Create and run tests in `tests/test_retrospective_enforcement.py` <!-- id: 2 -->
+- [x] Run full finalization check <!-- id: 3 -->
 
-Added `check_sop_infrastructure_changes()` to `check_protocol_compliance.py` which detects changes to:
+## Progress Log
 
-- Orchestrator scripts
-- Skill scripts
-- SKILL.md files
-- SOP documentation in `.agent/docs/`
+### 2026-02-15
 
-### 2. Escalation Trigger
+- Task started.
+- Created implementation plan.
+- Identified target files.
+- Promoted `inject_debrief_to_beads` to `BLOCKER` in `retrospective.json`.
+- Verified all retrospective checks are now blockers.
+- Added unit tests to ensure enforcement.
+- Verified orchestrator node logic.
+🏁
 
-Updated `run_turbo_initialization()` to call the detection logic. If SOP infrastructure changes are detected:
+## Plan Approval
 
-- Turbo Mode is blocked
-- Full Mode escalation is required (--init)
-
-### 3. Documentation
-
-- Updated `sop-modification/SKILL.md` to expand its scope to SOP infrastructure code changes.
-- Updated `SOP_COMPLIANCE_CHECKLIST.md` Phase 4 Execution section to document the escalation trigger.
-
-### 4. Verification
-
-Created `tests/test_sop_infrastructure_escalation.py` with 7 test cases covering:
-
-- No changes (no escalation)
-- Orchestrator script changes (escalation)
-- Skill script changes (escalation)
-- SKILL.md changes (escalation)
-- SOP doc changes (escalation)
-- Regular code changes (no escalation)
-- Mixed changes (escalation)
-
-All tests PASSED.
-
-## Status: COMPLETED
+- [x] Plan approved by USER <!-- id: approved -->

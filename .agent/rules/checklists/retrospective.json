@@ -66,7 +66,7 @@
                 {
                     "id": "inject_debrief_to_beads",
                     "description": "Inject debrief implementation details into Beads issue comments",
-                    "type": "WARNING",
+                    "type": "BLOCKER",
                     "validator": "inject_debrief_to_beads"
                 }
             ]

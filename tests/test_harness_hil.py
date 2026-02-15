@@ -22,11 +22,86 @@ from agent_harness.engine import create_harness_graph, get_sqlite_checkpointer, 
     return_value=(True, "Mocked coupling"),
 )
 @patch(
+    "agent_harness.nodes.initialization.check_tool_version",
+    return_value=(True, "Mocked tool version"),
+)
+@patch(
+    "agent_harness.nodes.initialization.check_workspace_integrity",
+    return_value=(True, "Mocked workspace integrity"),
+)
+@patch(
+    "agent_harness.nodes.initialization.check_planning_docs",
+    return_value=(True, "Mocked planning docs"),
+)
+@patch(
+    "agent_harness.nodes.initialization.check_hook_integrity",
+    return_value=(True, "Mocked hook integrity"),
+)
+@patch(
+    "agent_harness.nodes.initialization.check_rebase_status",
+    return_value=(True, "Mocked rebase status"),
+)
+@patch(
     "agent_harness.nodes.finalization.check_plan_approval",
     return_value=(True, "Mocked plan approval"),
 )
+@patch(
+    "agent_harness.nodes.finalization.check_reflection_invoked",
+    return_value=(True, "Mocked reflection"),
+)
+@patch(
+    "agent_harness.nodes.finalization.check_debriefing_invoked",
+    return_value=(True, "Mocked debriefing"),
+)
+@patch(
+    "agent_harness.nodes.finalization.check_progress_log_exists",
+    return_value=(True, "Mocked progress log"),
+)
+@patch(
+    "agent_harness.nodes.finalization.check_handoff_pr_link",
+    return_value=(True, "Mocked handoff link"),
+)
+@patch(
+    "agent_harness.nodes.finalization.check_todo_completion",
+    return_value=(True, "Mocked todo completion"),
+)
+@patch(
+    "agent_harness.nodes.finalization.check_wrapup_indicator_symmetry",
+    return_value=(True, "Mocked symmetry"),
+)
+@patch(
+    "agent_harness.nodes.finalization.check_wrapup_exclusivity",
+    return_value=(True, "Mocked exclusivity"),
+)
+@patch(
+    "agent_harness.nodes.finalization.check_handoff_beads_id",
+    return_value=(True, "Mocked handoff id"),
+)
+@patch(
+    "agent_harness.nodes.finalization.inject_debrief_to_beads",
+    return_value=(True, "Mocked injection"),
+)
 def test_hil_flow(
-    mock_final_approval, mock_coupling, mock_init_approval, mock_beads, mock_get_sess, mock_has_sess
+    mock_inject,
+    mock_handoff,
+    mock_exclusivity,
+    mock_symmetry,
+    mock_todo,
+    mock_link,
+    mock_progress,
+    mock_debrief,
+    mock_reflection,
+    mock_final_approval,
+    mock_rebase,
+    mock_hook,
+    mock_plans,
+    mock_work,
+    mock_tool,
+    mock_coupling,
+    mock_init_approval,
+    mock_beads,
+    mock_get_sess,
+    mock_has_sess,
 ):
     process_id = "HIL-TEST"
     thread_id = "hil-thread-1"
