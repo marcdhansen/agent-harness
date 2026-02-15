@@ -37,7 +37,7 @@ try:
         check_child_pr_linkage,
         check_code_review_status,
         check_debriefing_invoked,
-        # check_handoff_beads_id,
+        check_handoff_beads_id,  # noqa: F401
         check_handoff_compliance,
         check_handoff_pr_link,
         check_handoff_pr_verification,
@@ -52,6 +52,9 @@ try:
         check_reflection_invoked,
         check_todo_completion,
         check_workspace_cleanup,
+        check_wrapup_exclusivity,  # noqa: F401
+        check_wrapup_indicator_symmetry,  # noqa: F401
+        inject_debrief_to_beads,  # noqa: F401
     )
 
     # check_wrapup_exclusivity,
