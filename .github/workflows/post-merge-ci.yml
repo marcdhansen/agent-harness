@@ -29,9 +29,6 @@ jobs:
           uv sync --all-extras --dev
           uv pip install bandit
 
-      - name: Force infrastructure failure for testing
-        run: exit 1
-
       - name: Install Beads
         run: |
           curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
@@ -52,9 +49,9 @@ jobs:
           bd sync || echo "Initial sync failed, will attempt to close anyway"
         continue-on-error: true
 
-      - name: Run Safety Net Tests
+      - name: Run Safety Net Tests (Forced failure)
         id: tests
-        run: uv run pytest tests/
+        run: exit 1
         continue-on-error: true
 
       - name: Security scan (Bandit)
