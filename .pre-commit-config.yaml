@@ -9,6 +9,11 @@ repos:
         stages: [commit]
       - id: ruff-format
         stages: [commit]
+  - repo: https://github.com/pre-commit/mirrors-yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        files: \.github/workflows/
   - repo: local
     hooks:
       - id: beads
