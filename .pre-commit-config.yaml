@@ -9,7 +9,7 @@ repos:
         stages: [commit]
       - id: ruff-format
         stages: [commit]
-  - repo: https://github.com/pre-commit/mirrors-yamllint
+  - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.1
     hooks:
       - id: yamllint
