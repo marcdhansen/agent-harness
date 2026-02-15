@@ -40,6 +40,9 @@ jobs:
       - name: Sync Beads
         run: |
           export PATH="$HOME/.local/bin:$PATH"
+          if [ ! -f ".beads/beads.db" ]; then
+            bd init --quiet --prefix agent
+          fi
           git fetch origin beads-metadata || true
           bd sync
 
