@@ -29,23 +29,25 @@ jobs:
           uv pip install bandit
 
       - name: Install Beads
-        env:
-          BEADS_VERSION: "0.47.1"
         run: |
-          # Use specific version install script and set bin directory
-          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v${BEADS_VERSION}/scripts/install.sh | bash -s -- --version v${BEADS_VERSION}
+          BEADS_VERSION="0.47.1"
+          curl -L "https://github.com/steveyegge/beads/releases/download/v${BEADS_VERSION}/beads_${BEADS_VERSION}_linux_amd64.tar.gz" | tar xz
+          mkdir -p $HOME/.local/bin
+          mv beads $HOME/.local/bin/bd
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           export PATH="$HOME/.local/bin:$PATH"
-          bd --version
+          bd version
 
       - name: Sync Beads
+        id: sync
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          if [ ! -d ".beads" ] || [ ! -f ".beads/beads.db" ]; then
-            bd init --quiet --prefix agent || true
+          if [ ! -f ".beads/beads.db" ]; then
+            bd init --quiet --prefix agent || echo "Init failed"
           fi
           git fetch origin beads-metadata || true
-          bd sync || bd --no-db sync
+          bd sync || bd --no-db sync || echo "Sync failed"
+        continue-on-error: true
 
       - name: Run Safety Net Tests
         id: tests
