@@ -1,10 +1,14 @@
+default_stages: [commit]
+
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.0
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
+        stages: [commit]
       - id: ruff-format
+        stages: [commit]
   - repo: local
     hooks:
       - id: beads
@@ -13,3 +17,4 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+        stages: [commit]

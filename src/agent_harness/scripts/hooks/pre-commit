@@ -4,6 +4,12 @@
 
 set -e
 
+# CI SKIP HEADER - defense in depth
+if [[ "$GITHUB_ACTIONS" == "true" ]] || [[ "$CI" == "true" ]]; then
+    echo "ℹ️ Skipping in CI (pre-commit hooks are local development tools)"
+    exit 0
+fi
+
 echo "🔒 Running Agent Harness pre-commit checks..."
 
 # Check if we are in a session

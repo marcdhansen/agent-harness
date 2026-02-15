@@ -1,0 +1,136 @@
+name: Post-Merge CI
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  beads-automation:
+    name: Sync Beads and Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras --dev
+          uv pip install bandit
+
+      - name: Install Beads
+        env:
+          BEADS_VERSION: "0.47.1"
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v${BEADS_VERSION}/scripts/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          bd --version
+
+      - name: Sync Beads
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          git fetch origin beads-metadata || true
+          bd sync
+
+      - name: Run Safety Net Tests
+        id: tests
+        run: uv run pytest tests/
+        continue-on-error: true
+
+      - name: Security scan (Bandit)
+        id: security
+        run: uv run bandit -r src/ -ll
+        continue-on-error: true
+
+      - name: Handle CI Failure
+        if: steps.tests.outcome == 'failure' || steps.security.outcome == 'failure'
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          EXISTING=$(bd list --label ci-failure --status open --json | jq 'length')
+          
+          if [ "$EXISTING" -eq 0 ]; then
+            FAILED=""
+            [ "${{ steps.tests.outcome }}" = "failure" ] && FAILED="$FAILED\n- Unit tests"
+            [ "${{ steps.security.outcome }}" = "failure" ] && FAILED="$FAILED\n- Security scan"
+
+            bd create "🚨 CRITICAL: Post-merge CI failure on main" \
+              -t bug -p 0 \
+              -l "ci-failure,automated,critical" \
+              -d "Post-merge CI pipeline failed. Tests that passed in PR CI are now failing on main.
+              
+**Failed checks:**$FAILED
+**Workflow:** ${{ github.workflow }}
+**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+**Commit:** ${{ github.sha }}
+**Triggered by:** @${{ github.actor }}
+
+Please investigate immediately."
+          fi
+
+      - name: Extract linked issues from commits
+        if: steps.tests.outcome == 'success' && steps.security.outcome == 'success'
+        id: extract_issues
+        env:
+          ISSUE_PATTERN: ${{ vars.BEADS_ISSUE_PATTERN || 'agent-[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)?(?:\.\d+)?' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commits = context.payload.commits || [];
+            const pattern = process.env.ISSUE_PATTERN;
+            const issueRegex = new RegExp(pattern, 'gi');
+            const issues = new Set();
+            
+            for (const commit of commits) {
+              const matches = commit.message.match(issueRegex);
+              if (matches) {
+                matches.forEach(id => issues.add(id));
+              }
+            }
+            return Array.from(issues);
+
+      - name: Close issues on success
+        if: steps.tests.outcome == 'success' && steps.security.outcome == 'success'
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          ISSUES='${{ steps.extract_issues.outputs.result }}'
+          
+          if [ "$ISSUES" != "[]" ]; then
+            echo "$ISSUES" | jq -r '.[]' | while read -r issue_id; do
+              echo "Closing linked issue: $issue_id"
+              bd close "$issue_id" --reason "✅ CI/CD passed successfully [skip ci]" || true
+            done
+          fi
+
+      - name: Commit and push beads updates
+        if: always()
+        env:
+          BEADS_METADATA_BRANCH: "beads-metadata"
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          if [ -n "$(git status --porcelain .beads/)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            git fetch origin $BEADS_METADATA_BRANCH || true
+            if git show-ref --verify --quiet refs/remotes/origin/$BEADS_METADATA_BRANCH; then
+              git checkout $BEADS_METADATA_BRANCH
+              git pull origin $BEADS_METADATA_BRANCH
+            else
+              git checkout -b $BEADS_METADATA_BRANCH
+            fi
+            
+            git add .beads/
+            git commit -m "beads: auto-sync from post-merge CI [skip ci]"
+            git push origin $BEADS_METADATA_BRANCH
+          fi

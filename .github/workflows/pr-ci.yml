@@ -1,0 +1,60 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras --dev
+          uv pip install bandit
+
+      - name: Verify linting (Ruff)
+        # WARNS - non-blocking
+        run: |
+          echo "::group::Linting Verification"
+          if uv run ruff check .; then
+            echo "✅ Linting passed"
+          else
+            echo "::warning::Linting failed - pre-commit hook may not have run locally"
+          fi
+          echo "::endgroup::"
+        continue-on-error: true
+
+      - name: Check formatting (Ruff)
+        # SKIP - trivial, but we'll warn if we want
+        run: |
+          if uv run ruff format --check .; then
+            echo "✅ Formatting passed"
+          else
+            echo "::warning::Formatting issues detected - run 'ruff format .' locally"
+          fi
+        continue-on-error: true
+
+      - name: Run tests (Pytest)
+        # BLOCKS
+        run: uv run pytest tests/
+
+      - name: Security scan (Bandit)
+        # BLOCKS
+        run: uv run bandit -r src/ -ll

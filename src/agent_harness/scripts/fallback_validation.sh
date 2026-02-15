@@ -2,6 +2,12 @@
 # Orchestrator - Fallback Validation Script
 # Use this when Python scripts fail or environment is broken.
 
+# CI SKIP HEADER - defense in depth
+if [[ "$GITHUB_ACTIONS" == "true" ]] || [[ "$CI" == "true" ]]; then
+    echo "ℹ️ Skipping in CI (fallback validation is a local developer tool)"
+    exit 0
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
