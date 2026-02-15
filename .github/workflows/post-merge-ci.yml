@@ -2,10 +2,11 @@ name: Post-Merge CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, task/harden-ci-failure-handler]
 
 permissions:
   contents: write
+  issues: write # Requirement for gh issue create fallback
 
 jobs:
   beads-automation:
@@ -27,6 +28,9 @@ jobs:
         run: |
           uv sync --all-extras --dev
           uv pip install bandit
+
+      - name: Force infrastructure failure for testing
+        run: exit 1
 
       - name: Install Beads
         run: |
@@ -59,22 +63,46 @@ jobs:
         continue-on-error: true
 
       - name: Handle CI Failure
-        if: steps.tests.outcome == 'failure' || steps.security.outcome == 'failure'
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
+          
+          # Check if beads is available
+          if ! command -v bd &> /dev/null; then
+            echo "::warning::Beads CLI not available. Creating GitHub issue as fallback."
+            gh issue create \
+              --title "🚨 [INFRA] Post-merge CI failure: Infrastructure/Install" \
+              --body "The CI pipeline failed before Beads was installed or the Beads install itself failed.
+              
+              **Workflow:** ${{ github.workflow }}
+              **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              **Commit:** ${{ github.sha }}
+              **Triggered by:** @${{ github.actor }}
+              
+              *Note: This is an automated fallback issue because the 'bd' command was unavailable.*" \
+              --label "ci-failure,automated,critical" || echo "::error::Failed to create GitHub issue fallback"
+            exit 0
+          fi
+
+          # Normal Beads issue creation if bd is available
           EXISTING=$(bd list --label ci-failure --status open --json | jq 'length')
           
           if [ "$EXISTING" -eq 0 ]; then
-            FAILED=""
-            [ "${{ steps.tests.outcome }}" = "failure" ] && FAILED="$FAILED\n- Unit tests"
-            [ "${{ steps.security.outcome }}" = "failure" ] && FAILED="$FAILED\n- Security scan"
+            FAILED="Automated error detection: Job execution failed."
+            [ "${{ steps.tests.outcome }}" = "failure" ] && FAILED="- Unit tests"
+            [ "${{ steps.security.outcome }}" = "failure" ] && FAILED="- Security scan"
+            [ "${{ steps.sync.outcome }}" = "failure" ] && FAILED="- Beads sync"
 
-            bd create "CRITICAL: Post-merge CI failure on main" \
+            bd create "🚨 CRITICAL: Post-merge CI failure on main" \
               -t bug -p 0 \
               -l "ci-failure,automated,critical" \
-              -d "Post-merge CI pipeline failed. Tests that passed in PR CI are now failing on main.
+              -d "Post-merge CI pipeline failed. 
               
-              **Failed checks:**$FAILED
+              **Failed checks:**
+              $FAILED
+              
               **Workflow:** ${{ github.workflow }}
               **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
               **Commit:** ${{ github.sha }}
