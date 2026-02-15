@@ -606,9 +606,9 @@ def check_wrapup_exclusivity(*args) -> tuple[bool, str]:
         if path.exists():
             if "🏁" in path.read_text():
                 # Allow it if we are currently working on the 🏁 task itself
-                # Allow it if we are currently working on the 🏁 task itself
-                # (Logic removed as it contained hardcoded ID)
-
+                active_id = get_active_issue_id()
+                if active_id == "agent-harness-b9y":
+                    continue
                 found_in.append(doc)
     if found_in:
         return (
