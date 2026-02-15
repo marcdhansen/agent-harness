@@ -28,6 +28,23 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
+      - name: Install Beads
+        env:
+          BEADS_VERSION: "0.47.1"
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v${BEADS_VERSION}/scripts/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # Ensure path for subsequent commands in this step
+          export PATH="$HOME/.local/bin:$PATH"
+          bd --version
+
+      - name: Sync Beads
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          # Try to fetch metadata branch if it exists
+          git fetch origin beads-metadata || true
+          bd sync
+
       - name: Run linter (Ruff)
         run: uv run ruff check .
 
@@ -36,3 +53,51 @@ jobs:
 
       - name: Run tests (Pytest)
         run: uv run pytest tests/
+
+      - name: Handle CI Failure
+        if: failure()
+        env:
+          BEADS_METADATA_BRANCH: "beads-metadata"
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          
+          # Deduplication: check for open ci-failure issues
+          # Note: jq is pre-installed on ubuntu-latest
+          EXISTING=$(bd list --label ci-failure --status open --json | jq 'length')
+          
+          if [ "$EXISTING" -gt 0 ]; then
+            echo "CI failure issue already exists, skipping creation"
+          else
+            echo "No existing CI failure issue found. Creating new P0 bug."
+            bd create "CI/CD Failure on main" \
+              -t bug -p 0 \
+              -l "ci-failure,automated" \
+              -d "CI/CD pipeline failed.
+              
+**Workflow:** ${{ github.workflow }}
+**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+**Commit:** ${{ github.sha }}
+**Triggered by:** @${{ github.actor }}
+
+Please review the logs and fix the stability issue."
+          fi
+          
+          # Commit and push beads updates to metadata branch
+          # This avoids pushing directly to protected branches
+          if [ -n "$(git status --porcelain .beads/)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            # Fetch or create metadata branch
+            git fetch origin $BEADS_METADATA_BRANCH || true
+            if git show-ref --verify --quiet refs/remotes/origin/$BEADS_METADATA_BRANCH; then
+              git checkout $BEADS_METADATA_BRANCH
+              git pull origin $BEADS_METADATA_BRANCH
+            else
+              git checkout -b $BEADS_METADATA_BRANCH
+            fi
+            
+            git add .beads/
+            git commit -m "beads: auto-update for CI failure [skip ci]"
+            git push origin $BEADS_METADATA_BRANCH
+          fi
