@@ -32,7 +32,8 @@ jobs:
         env:
           BEADS_VERSION: "0.47.1"
         run: |
-          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v${BEADS_VERSION}/scripts/install.sh | bash
+          # Use specific version install script and set bin directory
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v${BEADS_VERSION}/scripts/install.sh | bash -s -- --version v${BEADS_VERSION}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           export PATH="$HOME/.local/bin:$PATH"
           bd --version
@@ -40,11 +41,11 @@ jobs:
       - name: Sync Beads
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          if [ ! -f ".beads/beads.db" ]; then
-            bd init --quiet --prefix agent
+          if [ ! -d ".beads" ] || [ ! -f ".beads/beads.db" ]; then
+            bd init --quiet --prefix agent || true
           fi
           git fetch origin beads-metadata || true
-          bd sync
+          bd sync || bd --no-db sync
 
       - name: Run Safety Net Tests
         id: tests
@@ -121,16 +122,22 @@ jobs:
           BEADS_METADATA_BRANCH: "beads-metadata"
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          if [ -n "$(git status --porcelain .beads/)" ]; then
-            # Save current beads state
+          if [ -d ".beads" ] && [ -n "$(git status --porcelain .beads/ 2>/dev/null)" ]; then
+            echo "Beads changes detected. Moving to metadata branch..."
+            
+            # Save current beads state robustly
             mkdir -p /tmp/beads_backup
-            cp -r .beads/* /tmp/beads_backup/ 2>/dev/null || true
-            cp .beads/.* /tmp/beads_backup/ 2>/dev/null || true
+            cp -a .beads/ /tmp/beads_backup/
             
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             
+            # Fetch metadata branch
             git fetch origin $BEADS_METADATA_BRANCH || true
+            
+            # CRITICAL: Remove .beads before checkout to avoid untracked file conflicts
+            rm -rf .beads/
+            
             if git show-ref --verify --quiet refs/remotes/origin/$BEADS_METADATA_BRANCH; then
               git checkout $BEADS_METADATA_BRANCH
               git pull origin $BEADS_METADATA_BRANCH
@@ -138,10 +145,10 @@ jobs:
               git checkout -b $BEADS_METADATA_BRANCH
             fi
             
-            # Restore saved beads state and clean up untracked artifacts that cause conflicts
-            rm -f .beads/beads.db .beads/beads.db-shm .beads/beads.db-wal
-            cp -r /tmp/beads_backup/* .beads/ 2>/dev/null || true
-            cp /tmp/beads_backup/.* .beads/ 2>/dev/null || true
+            # Restore saved beads state and clean up runtime artifacts
+            rm -rf .beads/
+            cp -a /tmp/beads_backup/.beads/ .beads/
+            rm -f .beads/beads.db .beads/beads.db-shm .beads/beads.db-wal .beads/.migration-hint-ts
             
             git add .beads/
             if git commit -m "beads: auto-sync from post-merge CI [skip ci]"; then
