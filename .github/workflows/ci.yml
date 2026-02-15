@@ -1,16 +1,17 @@
-name: PR Validation
+name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
 permissions:
-  contents: read
-  pull-requests: write
+  contents: write
 
 jobs:
   validate:
-    name: Validate PR
+    name: Test and Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,42 +26,24 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          uv sync --all-extras --dev
-          uv pip install bandit
+        run: uv sync --all-extras --dev
 
-      - name: Verify linting (Ruff)
-        # WARNS - non-blocking
-        run: |
-          echo "::group::Linting Verification"
-          if uv run ruff check .; then
-            echo "✅ Linting passed"
-          else
-            echo "::warning::Linting failed - pre-commit hook may not have run locally"
-          fi
-          echo "::endgroup::"
+      - name: Run linter (Ruff)
+        run: uv run ruff check .
         continue-on-error: true
 
       - name: Check formatting (Ruff)
-        # SKIP - trivial, but we'll warn if we want
-        run: |
-          if uv run ruff format --check .; then
-            echo "✅ Formatting passed"
-          else
-            echo "::warning::Formatting issues detected - run 'ruff format .' locally"
-          fi
+        run: uv run ruff format --check .
         continue-on-error: true
 
       - name: Run tests (Pytest)
-        # BLOCKS
         run: uv run pytest tests/
 
       - name: Security scan (Bandit)
-        # BLOCKS
         run: uv run bandit -r src/ -ll
 
   beads-sync:
-    name: Sync Beads (Non-blocking)
+    name: Sync Beads
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -77,18 +60,62 @@ jobs:
       - name: Install Beads
         run: |
           curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
-          if [ -f "$HOME/.local/bin/bd" ]; then
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-          fi
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
           bd --version || echo "Beads installation skipped"
 
       - name: Sync Beads
-        if: always()
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           git fetch origin beads-metadata || true
           bd sync || echo "Beads sync failed - non-blocking"
         continue-on-error: true
+
+      - name: Handle CI Failure
+        if: failure()
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          
+          EXISTING=$(bd list --label ci-failure --status open --json 2>/dev/null | jq 'length' || echo "0")
+          
+          if [ "$EXISTING" -eq 0 ]; then
+            bd create "CI/CD Failure on main" -t bug -p 0 -l "ci-failure,automated" -d "CI/CD pipeline failed. See workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
+
+      - name: Extract linked issues from commits
+        if: success()
+        id: extract_issues
+        env:
+          ISSUE_PATTERN: ${{ vars.BEADS_ISSUE_PATTERN || 'agent-[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)?(?:\.\d+)?' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commits = context.payload.commits || [];
+            const pattern = process.env.ISSUE_PATTERN;
+            const issueRegex = new RegExp(pattern, 'gi');
+            const issues = new Set();
+            
+            for (const commit of commits) {
+              const matches = commit.message.match(issueRegex);
+              if (matches) {
+                matches.forEach(id => issues.add(id));
+              }
+            }
+            return Array.from(issues);
+
+      - name: Close issues on success
+        if: success()
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          ISSUES='${{ steps.extract_issues.outputs.result }}'
+          
+          if [ "$ISSUES" != "[]" ] && [ -n "$ISSUES" ]; then
+            echo "$ISSUES" | jq -r '.[]' | while read -r issue_id; do
+              echo "Closing linked issue: $issue_id"
+              bd close "$issue_id" --reason "CI/CD passed successfully [skip ci]" || true
+            done
+            bd sync || true
+          fi
 
       - name: Commit and push beads updates
         if: always()
@@ -116,10 +143,8 @@ jobs:
             rm -f .beads/.migration-hint-ts .beads/.sync.lock .beads/daemon.lock
             rm -f .beads/daemon.pid .beads/daemon.log
             git add .beads/
-            if git commit -m "beads: auto-sync from PR CI [skip ci]"; then
+            if git commit -m "beads: auto-sync from CI [skip ci]"; then
               git push origin $BEADS_METADATA_BRANCH || echo "Push failed - non-blocking"
-            else
-              echo "No changes to commit in .beads"
             fi
           fi
         continue-on-error: true
