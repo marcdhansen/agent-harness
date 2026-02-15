@@ -30,23 +30,21 @@ jobs:
 
       - name: Install Beads
         run: |
-          BEADS_VERSION="0.47.1"
-          curl -L "https://github.com/steveyegge/beads/releases/download/v${BEADS_VERSION}/beads_${BEADS_VERSION}_linux_amd64.tar.gz" | tar xz
-          mkdir -p $HOME/.local/bin
-          mv beads $HOME/.local/bin/bd
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+          # Ensure bd is in path
+          if [ -f "/usr/local/bin/bd" ]; then
+            echo "/usr/local/bin" >> $GITHUB_PATH
+          elif [ -f "$HOME/.local/bin/bd" ]; then
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+          fi
           bd version
 
       - name: Sync Beads
         id: sync
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          if [ ! -f ".beads/beads.db" ]; then
-            bd init --quiet --prefix agent || echo "Init failed"
-          fi
+          # Try to sync but don't fail if DB init is weird in CI
           git fetch origin beads-metadata || true
-          bd sync || bd --no-db sync || echo "Sync failed"
+          bd sync || bd --no-db sync || echo "Initial sync failed, will attempt to close anyway"
         continue-on-error: true
 
       - name: Run Safety Net Tests
