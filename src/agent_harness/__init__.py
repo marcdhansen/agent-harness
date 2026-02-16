@@ -9,6 +9,16 @@ from agent_harness.session_tracker import (
 )
 from agent_harness.state import ProtocolState
 
+# Worktree management (agent-6x9.4)
+_worktree_available = True
+try:
+    from agent_harness.git_worktree_manager import (
+        GitWorktreeManager,
+        WorktreeCleanupError,
+    )
+except ImportError:
+    _worktree_available = False
+
 __all__ = [
     "InnerHarness",
     "ProtocolState",
@@ -18,5 +28,13 @@ __all__ = [
     "CleanupViolationError",
     "ValidationResult",
 ]
+
+if _worktree_available:
+    __all__.extend(
+        [
+            "GitWorktreeManager",
+            "WorktreeCleanupError",
+        ]
+    )
 
 __version__ = "0.1.0"

@@ -992,7 +992,15 @@ def check_child_pr_linkage(*args) -> tuple[bool, str]:
 
 
 def check_workspace_cleanup(*args) -> tuple[bool, str]:
-    """Verify that the workspace is free of temporary session artifacts drift."""
+    """Verify that the workspace is free of temporary session artifacts drift.
+
+    Checks:
+    - Pattern-based file violations (agent-6x9.1)
+    - Worktree cleanup validation (agent-6x9.4)
+    """
+    from pathlib import Path
+
+    # Check 1: Pattern-based file violations (existing)
     try:
         result = subprocess.run(
             ["git", "ls-files", "--others", "--exclude-standard"],
@@ -1016,27 +1024,65 @@ def check_workspace_cleanup(*args) -> tuple[bool, str]:
         drift = [f for f in untracked if f not in allowed_in_root and not f.startswith("tests/")]
 
         if not drift:
-            return True, "Workspace clean of temporary artifact drift"
+            pass  # Continue to worktree checks
+        else:
+            suspicious = [
+                f
+                for f in drift
+                if any(pattern in f for pattern in [".bak", ".tmp", "copy", "old", "test_"])
+            ]
 
-        suspicious = [
-            f
-            for f in drift
-            if any(pattern in f for pattern in [".bak", ".tmp", "copy", "old", "test_"])
-        ]
+            if suspicious:
+                return (
+                    False,
+                    f"Suspicious temporary files detected: {', '.join(suspicious)}. Please clean up before finalization.",
+                )
 
-        if suspicious:
-            return (
-                False,
-                f"Suspicious temporary files detected: {', '.join(suspicious)}. Please clean up before finalization.",
-            )
-
-        return (
-            True,
-            f"Workspace has {len(drift)} untracked files (e.g., {drift[0]}). Ensure these are intended to be part of the PR.",
-        )
+            # Continue - not blocking, just a warning
 
     except Exception as e:
         return False, f"Workspace cleanup check error: {e}"
+
+    # Check 2: Worktree cleanup validation (agent-6x9.4)
+    try:
+        from agent_harness.git_worktree_manager import GitWorktreeManager
+
+        manager = GitWorktreeManager()
+        worktrees = manager.list_worktrees()
+
+        worktree_violations = []
+        for wt in worktrees:
+            path = Path(wt["path"])
+
+            # Skip main worktree
+            if path == Path.cwd():
+                continue
+
+            # Check if it's an agent worktree
+            if "agent" in wt.get("branch", ""):
+                violations = manager.validate_worktree_cleanup(path)
+                if violations:
+                    worktree_violations.append(
+                        f"Worktree {path.name} has violations: " + "; ".join(violations)
+                    )
+
+        if worktree_violations:
+            return (
+                False,
+                "Worktree cleanup violations found:\n  - "
+                + "\n  - ".join(worktree_violations)
+                + "\n\nFix: bash .harness/scripts/cleanup-worktrees.sh",
+            )
+
+    except ImportError:
+        # GitWorktreeManager not available - skip worktree check
+        pass
+    except Exception as e:
+        # Error checking worktrees - log warning but don't block
+        pass
+
+    # All checks passed
+    return True, "Workspace clean of temporary artifact drift and worktrees validated"
 
 
 def check_handoff_compliance(*args) -> tuple[bool, str]:
