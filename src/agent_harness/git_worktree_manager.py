@@ -6,10 +6,9 @@ Uses subprocess for git commands (consistent with existing codebase)
 """
 
 import subprocess
-from pathlib import Path
-from typing import Optional
-import uuid
 import time
+import uuid
+from pathlib import Path
 
 
 class WorktreeCleanupError(Exception):
@@ -219,7 +218,7 @@ class GitWorktreeManager:
                             cleaned.append(str(path))
                         except Exception:
                             pass
-            except Exception:
+            except Exception:  # nosec
                 continue
 
         return cleaned

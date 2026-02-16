@@ -20,6 +20,7 @@
 - [Best Practices Enforcement](#best-practices-enforcement)
 - [GitHub + Beads Integration](#github--beads-integration)
 - [Core Libraries](#core-libraries)
+- [AI Ecosystem & Integration](#ai-ecosystem--integration)
 - [Developer Workflow](#developer-workflow)
 - [File Structure](#file-structure)
 - [Inspiration & Lineage](#inspiration--lineage)
@@ -581,6 +582,54 @@ Beads stores issue data in `.beads/` (JSONL files). To avoid polluting the main 
 **Setup**: `pre-commit install`
 
 **Why**: Catch issues before they reach CI
+
+## AI Ecosystem & Integration
+
+The Agentic Protocol Harness is designed to orchestrate agents operating within a modern AI stack. Key integrations and supported libraries include:
+
+### LangExtract
+
+**Purpose**: High-precision structured information extraction.
+
+- **Role**: Enabling agents to extract actionable data from unstructured logs, research papers, and technical specifications.
+- **Key Feature**: Precise source grounding to the original text for visual verification.
+- **Provider**: Google Open Source.
+
+### Zilliz (Cloud Milvus)
+
+**Purpose**: Managed vector database for high-scale RAG (Retrieval-Augmented Generation).
+
+- **Role**: Long-term memory and document retrieval for agents.
+- **Key Feature**: Production-grade scalability for billion-scale vector searches.
+- **Integration**: Primary vector storage for LightRAG++ workloads.
+
+### LightRAG++
+
+**Purpose**: The primary RAG engine orchestrated by this harness.
+
+- **Role**: Providing advanced graph-based retrieval and multi-hop reasoning capabilities.
+- **Status**: Target implementation target for harness-managed agents.
+
+### Neo4j
+
+**Purpose**: Graph database for structured relationship mapping.
+
+- **Role**: Storing and querying complex relationships extracted by agents.
+- **Integration**: Used alongside Zilliz for hybrid GraphRAG implementations.
+
+### LangFuse
+
+**Purpose**: LLM observability, tracing, and prompt management.
+
+- **Role**: Monitoring agent execution, latency, and cost in the Outer Loop.
+- **Integration**: Integrated into execution nodes for real-time visibility.
+
+### LiteLLM
+
+**Purpose**: Universal proxy for LLM APIs (OpenAI, Gemini, Anthropic, etc.).
+
+- **Role**: Standardizing model calls across different providers in the Inner Loop.
+- **Why**: Allows agents to switch models seamlessly based on task complexity.
 
 ## Developer Workflow
 

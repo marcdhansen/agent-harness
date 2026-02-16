@@ -13,8 +13,8 @@ from agent_harness.state import ProtocolState
 _worktree_available = True
 try:
     from agent_harness.git_worktree_manager import (
-        GitWorktreeManager,
-        WorktreeCleanupError,
+        GitWorktreeManager,  # noqa: F401
+        WorktreeCleanupError,  # noqa: F401
     )
 except ImportError:
     _worktree_available = False
