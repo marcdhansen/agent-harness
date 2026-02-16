@@ -1,0 +1,121 @@
+name: Cleanup Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - master
+      - develop
+
+
+permissions:
+  contents: read
+  pull-requests: write
+
+
+jobs:
+  validate-cleanup:
+    name: Validate Workspace Cleanup
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for temporary files in PR
+        id: scan
+        run: |
+          echo "🔍 Scanning PR for temporary files..."
+          echo ""
+
+          BASE_BRANCH="${{ github.base_ref }}"
+          echo "Base branch: origin/$BASE_BRANCH"
+
+          CHANGED_FILES=$(git diff --name-only --diff-filter=AM origin/$BASE_BRANCH...HEAD 2>/dev/null || git diff --name-only --diff-filter=AM $BASE_BRANCH...HEAD)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No files changed in PR"
+            echo "violations_found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Files in PR:"
+          echo "$CHANGED_FILES" | sed 's/^/  - /'
+          echo ""
+
+          if [ ! -f .harness/cleanup_patterns.txt ]; then
+            echo "⚠️  Warning: .harness/cleanup_patterns.txt not found"
+            echo "Skipping validation"
+            echo "violations_found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          VIOLATIONS=()
+          while IFS= read -r pattern; do
+            [[ "$pattern" =~ ^#.*$ ]] && continue
+            [[ -z "$pattern" ]] && continue
+
+            regex_pattern=$(echo "$pattern" | sed 's/\./\\./g' | sed 's/\*/.*/g' | sed 's/\?/./g')
+
+            while IFS= read -r file; do
+              if echo "$file" | grep -qE "^${regex_pattern}$"; then
+                VIOLATIONS+=("$file")
+              fi
+            done <<< "$CHANGED_FILES"
+          done < .harness/cleanup_patterns.txt
+
+          if [ ${#VIOLATIONS[@]} -gt 0 ]; then
+            echo "❌ CLEANUP VALIDATION FAILED"
+            echo ""
+            echo "Temporary files detected in PR:"
+            printf '  - %s\n' "${VIOLATIONS[@]}"
+            echo ""
+            echo "violations_found=true" >> $GITHUB_OUTPUT
+
+            {
+              echo "## ❌ Cleanup Validation Failed"
+              echo ""
+              echo "Temporary files detected in this PR:"
+              echo ""
+              printf -- '- `%s`\n' "${VIOLATIONS[@]}"
+              echo ""
+              echo "### How to Fix"
+              echo ""
+              echo "Remove these files from your PR:"
+              echo '```bash'
+              printf 'git rm %s\n' "${VIOLATIONS[@]}"
+              echo 'git commit -m "chore: remove temporary files"'
+              echo 'git push'
+              echo '```'
+              echo ""
+              echo "### Why This Failed"
+              echo ""
+              echo "These file patterns are configured in \`.harness/cleanup_patterns.txt\` as temporary artifacts that should not be committed."
+              echo ""
+              echo "If you believe this is a false positive, update the patterns file or rename the file."
+            } > /tmp/violation_report.md
+
+            exit 1
+          else
+            echo "✅ No temporary files detected"
+            echo "All files in PR passed cleanup validation"
+            echo "violations_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR
+        if: failure() && steps.scan.outputs.violations_found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('/tmp/violation_report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

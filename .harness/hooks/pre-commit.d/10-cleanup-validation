@@ -1,0 +1,74 @@
+#!/bin/bash
+# Cleanup validation component (agent-6x9.1)
+# Validates no temporary files are being committed
+
+
+echo "🧹 Validating workspace cleanup..."
+
+
+# Check if patterns file exists
+if [ ! -f .harness/cleanup_patterns.txt ]; then
+    echo "⚠️  Warning: No cleanup patterns file found at .harness/cleanup_patterns.txt"
+    echo "Skipping cleanup validation"
+    exit 0
+fi
+
+
+# Check if there are any staged files
+STAGED_COUNT=$(git diff --cached --name-only --diff-filter=AM | wc -l)
+if [ "$STAGED_COUNT" -eq 0 ]; then
+    echo "✅ No staged files to check"
+    exit 0
+fi
+
+
+# Scan staged files for violations
+VIOLATIONS=()
+while IFS= read -r pattern; do
+    # Skip comments and empty lines
+    [[ "$pattern" =~ ^#.*$ ]] && continue
+    [[ -z "$pattern" ]] && continue
+
+    # Convert glob pattern to regex for grep
+    regex_pattern=$(echo "$pattern" | sed 's/\./\\./g' | sed 's/\*/.*/g' | sed 's/\?/./g')
+
+    # Check staged files (added or modified)
+    files=$(git diff --cached --name-only --diff-filter=AM | grep -E "^${regex_pattern}$" || true)
+
+    if [ -n "$files" ]; then
+        while IFS= read -r file; do
+            VIOLATIONS+=("$file")
+        done <<< "$files"
+        break
+    fi
+done < .harness/cleanup_patterns.txt
+
+
+# Report violations
+if [ ${#VIOLATIONS[@]} -gt 0 ]; then
+    echo ""
+    echo "⚠️  WARNING: Attempting to commit temporary files:"
+    printf '  - %s\n' "${VIOLATIONS[@]}"
+    echo ""
+    echo "These files should typically not be committed."
+    echo "Options:"
+    echo "  1. Unstage: git reset HEAD <file>"
+    echo "  2. Delete: rm <file>"
+    echo "  3. Continue anyway (will fail at PR validation)"
+    echo ""
+    read -p "Continue commit anyway? [y/N]: " -n 1 -r
+    echo
+
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Commit aborted"
+        exit 1
+    fi
+
+    echo "⚠️  Override confirmed - temporary files committed"
+    echo "⚠️  Note: PR validation will block merge until cleaned"
+else
+    echo "✅ No temporary files in commit"
+fi
+
+
+exit 0

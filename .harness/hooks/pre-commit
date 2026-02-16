@@ -1,0 +1,61 @@
+#!/bin/bash
+# Master pre-commit hook (agent-6x9.1)
+# Runs all hook components in .harness/hooks/pre-commit.d/
+
+
+set -e
+
+
+echo "🔒 Running pre-commit validation..."
+echo ""
+
+
+HOOK_DIR=".harness/hooks/pre-commit.d"
+
+
+# Check if components directory exists
+if [ ! -d "$HOOK_DIR" ]; then
+    echo "⚠️  No hook components found at $HOOK_DIR"
+    echo "Skipping validation"
+    exit 0
+fi
+
+
+# Run each executable component in order
+COMPONENTS_RUN=0
+COMPONENTS_FAILED=0
+
+
+for component in "$HOOK_DIR"/*; do
+    # Skip if not executable
+    [ -x "$component" ] || continue
+
+    COMPONENTS_RUN=$((COMPONENTS_RUN + 1))
+    COMPONENT_NAME=$(basename "$component")
+
+    echo "▶️  Running: $COMPONENT_NAME"
+
+    if "$component"; then
+        echo "✅ $COMPONENT_NAME passed"
+    else
+        echo "❌ $COMPONENT_NAME failed"
+        COMPONENTS_FAILED=$((COMPONENTS_FAILED + 1))
+        exit 1
+    fi
+
+    echo ""
+done
+
+
+# Summary
+if [ $COMPONENTS_RUN -eq 0 ]; then
+    echo "⚠️  No executable hook components found"
+elif [ $COMPONENTS_FAILED -eq 0 ]; then
+    echo "✅ All $COMPONENTS_RUN pre-commit checks passed"
+else
+    echo "❌ $COMPONENTS_FAILED of $COMPONENTS_RUN checks failed"
+    exit 1
+fi
+
+
+exit 0
