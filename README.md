@@ -157,6 +157,70 @@ python check_protocol_compliance.py --close --skip-validation
 ```
 ⚠️ Warning: This bypasses enforcement.
 
+### Worktree Cleanup Validation (agent-6x9.4)
+
+Git worktrees are validated during workspace cleanup checks.
+
+#### Integration Points
+
+Worktree validation is integrated into:
+1. **Finalization checklist** - `check_protocol_compliance.py --finalize`
+2. **Manual cleanup** - `.harness/scripts/cleanup-worktrees.sh`
+
+#### GitWorktreeManager API
+```python
+from agent_harness import GitWorktreeManager
+
+manager = GitWorktreeManager()
+
+# Create isolated worktree
+wt_path = manager.create_worktree("agent-1")
+
+# Validate before removal
+violations = manager.validate_worktree_cleanup(wt_path)
+if violations:
+    print(f"Cleanup required: {violations}")
+
+# Remove with validation
+manager.remove_worktree("agent-1")  # Blocks if dirty
+manager.remove_worktree("agent-1", validate_cleanup=False)  # Force
+```
+
+#### Validation Checks
+
+Worktree cleanup validates:
+- ✅ No temporary files (*.tmp, debug_*, etc.)
+- ✅ No uncommitted changes
+- ✅ No large files (>10MB)
+
+#### Manual Cleanup
+```bash
+# List and clean orphaned worktrees
+bash .harness/scripts/cleanup-worktrees.sh
+```
+
+#### Architecture
+```
+Finalization Checklist
+  ↓
+check_workspace_cleanup()
+  ↓
+├─ Pattern-based validation (6x9.1)
+└─ Worktree validation (6x9.4) ← NEW
+     ↓
+  GitWorktreeManager.validate_worktree_cleanup()
+```
+
+#### Error Handling
+```
+❌ Worktree cleanup violations found:
+  - Worktree worktree-agent-1 has violations: 
+    Temporary files (*.tmp): ['debug.tmp'];
+    Uncommitted changes in worktree
+
+Fix: bash .harness/scripts/cleanup-worktrees.sh
+```
+
 ## 📦 Core Libraries
 
 - **LangGraph**: Workflow orchestration and state management.
