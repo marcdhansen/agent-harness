@@ -8,14 +8,13 @@ import argparse
 import shutil
 import sys
 import time
-from datetime import datetime
 from pathlib import Path
 
 # Add src to path for absolute imports if needed
 sys.path.append(str(Path(__file__).parent / "src"))
 
 from agent_harness.compliance import get_active_issue_id
-from agent_harness.session_tracker import SessionTracker, CleanupViolationError
+from agent_harness.session_tracker import CleanupViolationError, SessionTracker
 
 
 def install_hooks():

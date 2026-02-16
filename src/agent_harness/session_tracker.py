@@ -1,9 +1,9 @@
 import json
 import time
+from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
-from typing import Any, Optional
-from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -94,7 +94,7 @@ class SessionTracker:
             validation = self.validate_finalization()
             if not validation.passed:
                 raise CleanupViolationError(
-                    f"Session cleanup incomplete:\n"
+                    "Session cleanup incomplete:\n"
                     + "\n".join(f"  - {v}" for v in validation.violations)
                 )
 
