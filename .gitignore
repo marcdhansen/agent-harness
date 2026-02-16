@@ -21,3 +21,12 @@ build/
 task.md
 debrief.md
 .reflection_input.json
+
+
+# Agent Harness - Session artifacts (agent-6x9.3)
+.agent/sessions/
+.harness/session.lock
+.harness/sessions.jsonl
+.harness/tool_usage.log
+.harness/cleanup_overrides.log
+.harness/archive/
