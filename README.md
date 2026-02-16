@@ -1,281 +1,788 @@
 # Agentic Protocol Harness
 
-Standard Agentic Protocol (SAP) Harness for AI Agent Orchestration.
+**A production-grade orchestration framework for AI agents that enforces software development best practices through automated validation and safety gates.**
 
-A flexible, two-tier agent orchestration framework designed for reliable, SOP-compliant software development. The harness ensures that agents follow best practices (SDD, TDD) via automated safety gates and data-driven SOP validation.
+[![CI Status](https://github.com/marcdhansen/agent-harness/workflows/PR%20Validation/badge.svg)](https://github.com/marcdhansen/agent-harness/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 Two-Tier Architecture
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+  - [Two-Tier Design](#two-tier-design)
+  - [Component Diagram](#component-diagram)
+  - [Data Flow](#data-flow)
+- [SOP Enforcement](#sop-enforcement)
+  - [JSON-Driven Validation](#json-driven-validation)
+  - [Safety Gates](#safety-gates)
+  - [Validator System](#validator-system)
+- [Best Practices Enforcement](#best-practices-enforcement)
+- [GitHub + Beads Integration](#github--beads-integration)
+- [Core Libraries](#core-libraries)
+- [Developer Workflow](#developer-workflow)
+- [File Structure](#file-structure)
+- [Inspiration & Lineage](#inspiration--lineage)
+- [License](#license)
+
+## Overview
+
+The **Agentic Protocol Harness** is a two-tier orchestration framework designed to enable AI agents to perform reliable, SOP-compliant software development. Unlike traditional agent frameworks that rely on prompts and hope, this harness **enforces** best practices through:
+
+- **Automated validation gates** that block non-compliant work
+- **JSON-driven checklists** instead of hard-coded markdown
+- **Branch-issue coupling** to prevent orphaned work
+- **CI/CD integration** with automated issue management
+- **Resumable execution** via SQLite-backed checkpointing
+
+### Target Audience
+
+- **AI Agent Developers**: Building reliable agent systems for software development
+- **DevOps Engineers**: Integrating AI agents into CI/CD pipelines
+- **Research Teams**: Exploring multi-agent orchestration patterns
+- **Engineering Teams**: Automating development workflows with quality guarantees
+
+### Value Proposition
+
+Traditional AI agents often produce inconsistent results, skip tests, or ignore best practices. The harness solves this by making compliance **structurally impossible to bypass**—agents must pass validation gates at each phase or the workflow terminates.
+
+## Key Features
+
+✅ **SOP Enforcement**: Standard Operating Procedure compliance via LangGraph conditional edges  
+✅ **TDD by Default**: Tests required before finalization  
+✅ **SDD Integration**: Implementation plans validated before execution  
+✅ **Parallel Development**: Branch-issue coupling prevents conflicts  
+✅ **CI/CD Automation**: Auto-creates/closes issues based on build status  
+✅ **Resumable Sessions**: SQLite checkpointing allows pause/resume  
+✅ **Human-in-the-Loop**: Approval gates using LangGraph interrupts  
+✅ **Programmatic Control**: JSON state ledger replaces brittle markdown parsing  
+
+## Architecture
+
+### Two-Tier Design
 
 The harness operates on two distinct loops to balance execution speed with process integrity.
 
-### 🔄 The Outer Loop (Orchestration & Compliance)
+```mermaid
+graph TB
+    subgraph Outer["🔄 Outer Loop: Lifecycle Orchestration (LangGraph)"]
+        Init[1️⃣ Initialization]
+        InitGate{Init Gate}
+        Approval[2️⃣ Approval Gate<br/>Human-in-Loop]
+        Exec[3️⃣ Execution]
+        FinalGate{Final Gate}
+        Retro[4️⃣ Retrospective]
+        Done[✅ COMPLETE]
+        Blocked[❌ BLOCKED/END]
+        
+        Init --> InitGate
+        InitGate -->|✅ Pass| Approval
+        InitGate -->|❌ Fail| Blocked
+        Approval -->|👤 Approved| Exec
+        Exec --> FinalGate
+        FinalGate -->|✅ Pass| Retro
+        FinalGate -->|❌ Fail| Blocked
+        Retro --> Done
+    end
+    
+    subgraph Inner["⚙️ Inner Loop: Stateless Execution"]
+        Sisyphus[Lead Orchestrator<br/>Sisyphus]
+        Hephaestus[Implementation<br/>Hephaestus]
+        Oracle[Validation<br/>Oracle]
+        Ledger[(ProtocolState<br/>JSON Ledger)]
+        
+        Exec -.delegates to.-> Sisyphus
+        Sisyphus --> Hephaestus
+        Hephaestus --> Oracle
+        Oracle --> Ledger
+    end
+    
+    Ledger <-.sync.-> TaskMD[task.md]
+    Rules[JSON Checklists] -.enforce.-> InitGate
+    Rules -.enforce.-> FinalGate
+    
+    style Outer fill:#e1f5ff
+    style Inner fill:#fff4e1
+    style Blocked fill:#ffe1e1
+    style Done fill:#e1ffe1
+```
 
-Built on **LangGraph**, the outer loop manages the full project lifecycle. It enforces the **Standard Operating Procedure (SOP)** by routing the workflow through specific phases:
+#### 🔄 Outer Loop: Lifecycle Orchestration
 
-1. **Initialization**: Environments are prepared, and prerequisites are verified.
-2. **Approval**: A human-in-the-loop gate (using LangGraph interrupts) ensures the plan is sound before execution starts.
-3. **Execution**: The heavy lifting is delegated to specialized agent teams.
-4. **Finalization**: Quality gates verify that code is tested, committed, and documented.
-5. **Retrospective**: Captures lessons learned to improve future sessions.
+Built on **LangGraph**, the outer loop manages the full project lifecycle through distinct phases:
 
-### ⚙️ The Inner Loop (Stateless Execution)
+1. **Initialization**: Verify environment, git status, Beads issue, and planning docs
+2. **Approval**: Human-in-the-loop gate (LangGraph interrupt) to review the plan
+3. **Execution**: Delegate work to specialized agent teams
+4. **Finalization**: Validate tests, commits, PR creation, and documentation
+5. **Retrospective**: Capture lessons learned and update knowledge base
 
-The internal engine for agent work. Originally driven by markdown files, the inner loop now leverages a **JSON-persisted state ledger (`ProtocolState`)**. This allows for:
+**Key Mechanism**: Conditional edges evaluate phase-specific validators. If a **BLOCKER** fails (e.g., uncommitted code, missing tests), the graph routes to `END`, freezing the agent until resolved.
 
-- **Programmatic Control**: Precise tracking of goals, facts, and discovered steps.
-- **Resumability**: SQLite-backed checkpointing allows processes to pause and resume without losing context.
-- **Human Oversight**: Continuous synchronization with `task.md` ensures humans can still monitor and edit the task list.
+#### ⚙️ Inner Loop: Stateless Execution
 
-## 🛡️ SOP Enforcement & Safety Gates
+The internal engine for agent work, originally driven by markdown files, now leverages a **JSON-persisted state ledger (`ProtocolState`)**:
 
-Compliance is not just a suggestion; it is built into the workflow's graph topology.
+- **Programmatic Control**: Precise tracking of goals, facts, and discovered steps
+- **Resumability**: SQLite-backed checkpointing allows pause/resume without context loss
+- **Human Oversight**: Continuous sync with `task.md` for human monitoring/editing
 
-### Safety Gates via Conditional Edges
+### Component Diagram
 
-The orchestration graph uses **conditional edges** to evaluate agent work. If a phase-specific check fails (e.g., a "BLOCKER" like uncommitted code or missing tests), the graph routes the process to `END`, effectively "freezing" the agent until the issue is resolved.
+```mermaid
+graph LR
+    subgraph Orchestrator["Orchestrator Nodes"]
+        N1[initialization.py]
+        N2[execution.py]
+        N3[finalization.py]
+    end
+    
+    subgraph Validation["Validation System"]
+        V1[compliance.py<br/>43+ validators]
+        V2[checklists.py<br/>JSON loader]
+        V3[JSON Checklists<br/>6 phase files]
+    end
+    
+    subgraph State["State Management"]
+        S1[state.py<br/>ProtocolState]
+        S2[persistence.py<br/>SQLite]
+        S3[session_tracker.py]
+    end
+    
+    subgraph External["External Systems"]
+        E1[Git/GitHub]
+        E2[Beads CLI]
+        E3[CI/CD Workflows]
+    end
+    
+    N1 --> V1
+    N3 --> V1
+    V1 --> V2
+    V2 --> V3
+    N1 --> S1
+    N2 --> S1
+    S1 --> S2
+    V1 --> E1
+    V1 --> E2
+    E3 --> E2
+    
+    style Orchestrator fill:#e1f5ff
+    style Validation fill:#ffe1e1
+    style State fill:#e1ffe1
+    style External fill:#fff4e1
+```
+
+**Components**:
+
+- **Orchestrator Nodes**: Phase-specific logic (initialization, execution, finalization)
+- **Validators**: 43+ functions in `compliance.py` checking git status, tests, PRs, Beads issues, etc.
+- **Checklists**: JSON files defining phase requirements with severity levels (BLOCKER, WARNING, INFO)
+- **State Management**: Pydantic models + SQLite for resumable execution
+- **External Integrations**: Git, GitHub CLI, Beads issue tracker, CI/CD workflows
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant Orchestrator
+    participant Validators
+    participant Checklist
+    participant Git
+    participant Beads
+    participant CI
+    
+    Agent->>Orchestrator: Start task
+    Orchestrator->>Checklist: Load initialization.json
+    Checklist->>Validators: Execute checks
+    Validators->>Git: Verify clean status
+    Validators->>Beads: Verify active issue
+    Validators-->>Orchestrator: ✅ All pass
+    Orchestrator->>Agent: Proceed to execution
+    
+    Agent->>Orchestrator: Complete work
+    Orchestrator->>Checklist: Load finalization.json
+    Checklist->>Validators: Execute checks
+    Validators->>Git: Check commits
+    Validators->>Git: Verify PR exists
+    Validators->>Beads: Check PR-issue link
+    Validators-->>Orchestrator: ✅ All pass
+    
+    Orchestrator->>Git: Push to GitHub
+    Git->>CI: Trigger workflow
+    CI->>Beads: Close issue on success
+    CI->>Beads: Create issue on failure
+```
+
+## SOP Enforcement
+
+The harness doesn't just *suggest* best practices—it **enforces** them through multiple mechanisms.
 
 ### JSON-Driven Validation
 
-We transitioned from hardcoded checklists to **data-driven JSON validation** (located in `.agent/rules/checklists/`) for several key reasons:
+**Why JSON over Markdown?**
 
-- **Transparency**: Agents and humans share the same source of truth for "what constitutes done."
-- **Extensibility**: Project-specific rules can be added by simply creating or editing JSON files without modifying the core harness code.
-- **Schema Validation**: Rules are strictly typed, reducing the risk of checklist drift or ambiguity.
+Traditional agent systems use markdown checklists that agents can ignore or misinterpret. We transitioned to **data-driven JSON validation** for:
 
-## 🛠️ Best Practices & Parallel Development
+- ✅ **Transparency**: Agents and humans share the same source of truth
+- ✅ **Extensibility**: Add project-specific rules without modifying core code
+- ✅ **Schema Validation**: Strictly typed rules prevent ambiguity
+- ✅ **Programmatic Enforcement**: Conditional edges block non-compliant work
 
-- **SDD & TDD First**: The harness requires an Implementation Plan (SDD) and passing tests (TDD) before work can be finalized.
-- **Parallel Non-Conflicting Development**: By strictly coupling git branches to **Beads (`bd`)** issue IDs, the harness prevents "orphan work" and minimizes merge conflicts in multi-agent environments.
-- **Extendable Rules**: Users can add custom validators by registering new functions in `compliance.py` and referencing them in the JSON checklists.
+**Example**: `initialization.json`
 
-## 📊 System Overview
-
-```mermaid
-graph TD
-    subgraph OuterHarness [Outer Loop: Lifecycle]
-        Init[Initialization] --> Gate1{Init Gate}
-        Gate1 -- Pass --> Appr[Approval Gate]
-        Gate1 -- Fail --> Blocked[Blocked/END]
-        Appr -- Interrupt --> Exec[Execution]
-        Exec --> Gate2{Final Gate}
-        Gate2 -- Pass --> Retro[Retrospective]
-        Gate2 -- Fail --> Blocked
-        Retro --> Done[COMPLETE]
-    end
-
-    subgraph InnerHarness [Inner Loop: Execution]
-        Exec --> Sisyphus[Lead Orchestrator]
-        Sisyphus --> Hephaestus[Implementation Specialist]
-        Hephaestus --> Oracle[Validation Specialist]
-        Oracle --> Ledger[(JSON ProtocolState)]
-    end
-
-    Ledger <-. Sync .-> TaskMD[task.md]
-    Rules[JSON Checklists] -. Enforce .-> Gate1
-    Rules -. Enforce .-> Gate2
+```json
+{
+  "phase": "initialization",
+  "checks": [
+    {
+      "id": "check_git_status",
+      "description": "Working directory must be clean",
+      "severity": "BLOCKER",
+      "validator": "check_git_status"
+    },
+    {
+      "id": "check_beads_issue",
+      "description": "Active Beads issue must exist",
+      "severity": "BLOCKER",
+      "validator": "check_beads_issue"
+    }
+  ]
+}
 ```
 
-## 🛠️ Development Tools
+**Location**: `.agent/rules/checklists/`
 
-### Local CI Simulation
+- `initialization.json` - Pre-work validation
+- `planning.json` - Plan approval checks
+- `execution.json` - Mid-work validation
+- `finalization.json` - Pre-commit validation
+- `retrospective.json` - Post-work learning capture
+- `clean_state.json` - Workspace cleanup
 
-To catch failures before pushing to GitHub, run the local CI simulation script. This script runs linting (Ruff), formatting, security audits (Bandit), and the full test suite (Pytest).
+### Safety Gates
+
+Safety gates use **LangGraph conditional edges** to evaluate agent work. The graph topology makes non-compliance structurally impossible:
+
+```python
+def should_proceed(state):
+    """Conditional edge function."""
+    results = run_phase_validators(state.phase)
+    blockers = [r for r in results if r.severity == "BLOCKER" and not r.passed]
+    
+    if blockers:
+        return "END"  # Freeze workflow
+    return "continue"
+
+# In graph definition
+graph.add_conditional_edges(
+    "initialization",
+    should_proceed,
+    {"continue": "approval", "END": END}
+)
+```
+
+**Severity Levels**:
+
+- **BLOCKER**: Fails the gate, routes to `END`
+- **WARNING**: Logs warning, allows continuation
+- **INFO**: Informational only
+
+### Validator System
+
+Validators are Python functions in `compliance.py` that check specific conditions:
+
+**Example Validators**:
+
+- `check_git_status`: Verify working tree is clean
+- `check_beads_issue`: Ensure active Beads issue exists
+- `check_branch_info`: Validate branch naming (e.g., `task/agent-b1k-*`)
+- `check_todo_completion`: All tasks in `task.md` marked complete
+- `check_pr_exists`: Pull request created for branch
+- `check_beads_pr_sync`: PR linked to Beads issue
+- `check_handoff_beads_id`: Beads ID in session summary
+
+**Validator Signature**:
+
+```python
+def check_example(*args) -> dict:
+    """
+    Validator function.
+    
+    Returns:
+        {
+            "passed": bool,
+            "message": str,
+            "details": dict (optional)
+        }
+    """
+    # Validation logic
+    return {"passed": True, "message": "Check passed"}
+```
+
+**Registration**: Validators are referenced by name in JSON checklists and dynamically invoked via `getattr(compliance_module, validator_name)`.
+
+## Best Practices Enforcement
+
+The harness enforces industry-standard software development practices:
+
+### 📋 SOP (Standard Operating Procedure)
+
+**What**: Structured lifecycle phases (Init → Approval → Execution → Finalization → Retrospective)
+
+**How Enforced**:
+
+- LangGraph orchestration with conditional edges
+- Phase-specific JSON checklists
+- Mandatory gates between phases
+
+**Benefit**: Consistent, repeatable workflows across all agent sessions
+
+### 📐 SDD (Software Design Document)
+
+**What**: Implementation plans required before coding
+
+**How Enforced**:
+
+- `check_planning_docs` validator in initialization
+- Requires `ImplementationPlan.md` or equivalent
+- Approval gate reviews plan before execution
+
+**Benefit**: Prevents "code first, think later" anti-patterns
+
+### 🧪 TDD (Test-Driven Development)
+
+**What**: Tests required before work can be finalized
+
+**How Enforced**:
+
+- Pytest integration in finalization checks
+- CI/CD runs tests on every PR
+- `check_todo_completion` ensures test tasks marked done
+
+**Benefit**: High test coverage, fewer regressions
+
+### 🔀 Parallel Non-Conflicting Development
+
+**What**: Multiple agents/developers work simultaneously without conflicts
+
+**How Enforced**:
+
+- **Branch-Issue Coupling**: Branch names must match Beads issue IDs (e.g., `task/agent-b1k-readme-update`)
+- `check_beads_issue` validates active issue exists
+- `check_branch_info` validates branch naming convention
+- Prevents "orphan work" not tracked in issue system
+
+**Benefit**: Clear ownership, no merge conflicts, full traceability
+
+### 🌿 Git Workflow
+
+**What**: Clean git hygiene (commits, PRs, branch management)
+
+**How Enforced**:
+
+- `check_git_status`: Working directory must be clean before finalization
+- `check_pr_exists`: PR required for feature branches
+- `check_beads_pr_sync`: PR must link to Beads issue
+- Pre-commit hooks: Ruff linting, formatting, Beads validation
+
+**Benefit**: Clean history, reviewable changes, automated quality checks
+
+## GitHub + Beads Integration
+
+The harness integrates **GitHub** (code hosting, CI/CD) with **Beads** (issue tracking) to create a closed-loop automation system.
+
+### Issue Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Open: bd create
+    Open --> InProgress: git checkout task/ISSUE_ID
+    InProgress --> InReview: Create PR
+    InReview --> Closed: CI passes on merge
+    InReview --> Open: CI fails
+    Closed --> [*]
+    
+    note right of InReview
+        PR must link to issue
+        via title/body AND
+        Beads comment
+    end note
+    
+    note right of Closed
+        Automated by
+        post-merge-ci.yml
+    end note
+```
+
+### CI/CD Workflows
+
+#### **PR Validation** (`pr-ci.yml`)
+
+Runs on every pull request:
+
+1. **Linting** (Ruff) - Non-blocking warning
+2. **Formatting** (Ruff) - Non-blocking warning
+3. **Tests** (Pytest) - **BLOCKS** merge if fails
+4. **Security** (Bandit) - **BLOCKS** merge if fails
+5. **Beads Sync** - Syncs metadata to `beads-metadata` branch
+
+#### **Post-Merge CI** (`post-merge-ci.yml`)
+
+Runs after merge to `main`:
+
+1. **Run Tests** - Safety net validation
+2. **Security Scan** - Bandit audit
+3. **Extract Issues** - Parse commit messages for Beads IDs
+4. **Close Issues** - Auto-close linked issues if CI passes
+5. **Create Issues** - Auto-create issue if CI fails
+
+**Failure Handling**:
+
+```yaml
+- name: Handle CI Failure
+  if: failure()
+  run: |
+    if ! command -v bd &> /dev/null; then
+      # Fallback: Create GitHub issue
+      gh issue create --title "🚨 CI Failure" --label "ci-failure"
+    else
+      # Primary: Create Beads issue
+      bd create "🚨 CRITICAL: Post-merge CI failure" -p 0 -l "ci-failure"
+    fi
+```
+
+### Beads Metadata Sync
+
+Beads stores issue data in `.beads/` (JSONL files). To avoid polluting the main branch with metadata churn, we sync to a separate `beads-metadata` branch:
+
+1. CI detects changes in `.beads/`
+2. Saves `.beads/` to temp directory
+3. Checks out `beads-metadata` branch
+4. Restores `.beads/` (excluding runtime artifacts like `.db`, `.lock`)
+5. Commits and pushes to `beads-metadata`
+
+**Benefit**: Clean main branch history, full issue audit trail
+
+### Branch-Issue Coupling
+
+**Convention**: `task/ISSUE_ID-description` or `feature/ISSUE_ID-description`
+
+**Examples**:
+
+- `task/agent-b1k-readme-update`
+- `feature/agent-gbv.15-python-tooling`
+
+**Validation**:
+
+- `get_active_issue_id()`: Extracts issue ID from branch name
+- `check_beads_issue()`: Verifies issue exists and is open
+- `check_branch_info()`: Validates branch naming pattern
+
+**Benefit**: Every branch maps to exactly one issue, preventing orphaned work
+
+## Core Libraries
+
+### LangGraph
+
+**Purpose**: Workflow orchestration and state management
+
+**Usage**:
+
+- Define orchestration graph with nodes (phases) and edges (transitions)
+- Conditional edges for safety gates
+- Interrupts for human-in-the-loop approval
+- SQLite checkpointing for resumable execution
+
+**Why**: Provides structural guarantees that prompt-based systems cannot
+
+### Pydantic
+
+**Purpose**: Schema validation for state and checklists
+
+**Usage**:
+
+- `ProtocolState`: Typed state model for agent execution
+- JSON schema validation for checklists
+- Type safety across the harness
+
+**Why**: Prevents runtime errors from malformed data
+
+### SQLite
+
+**Purpose**: Persistent checkpointing and resumability
+
+**Usage**:
+
+- Store `ProtocolState` snapshots
+- Enable pause/resume of long-running tasks
+- Audit trail of state transitions
+
+**Why**: Agents can recover from failures without losing progress
+
+### Beads
+
+**Purpose**: Issue tracking and branch-issue coupling
+
+**Usage**:
+
+- `bd create`: Create issues
+- `bd close`: Close issues
+- `bd sync`: Sync metadata
+- `bd list`: Query issues
+
+**Why**: Lightweight, CLI-first issue tracker designed for automation
+
+### Ruff
+
+**Purpose**: Linting and formatting
+
+**Usage**:
+
+- Pre-commit hooks
+- CI validation
+- Local development (`ruff check .`, `ruff format .`)
+
+**Why**: Fast, modern Python linter/formatter (replaces Flake8, Black, isort)
+
+### Pytest
+
+**Purpose**: Test framework
+
+**Usage**:
+
+- Unit tests in `tests/`
+- Integration tests for harness components
+- CI validation
+
+**Why**: Industry-standard Python testing framework
+
+### Bandit
+
+**Purpose**: Security scanning
+
+**Usage**:
+
+- Scans `src/` for security vulnerabilities
+- CI validation (blocks merge on high-severity issues)
+
+**Why**: Catches common security anti-patterns (hardcoded secrets, SQL injection, etc.)
+
+### pre-commit
+
+**Purpose**: Git hooks management
+
+**Usage**:
+
+- Auto-run Ruff on commit
+- Beads validation hooks
+- Custom validators
+
+**Setup**: `pre-commit install`
+
+**Why**: Catch issues before they reach CI
+
+## Developer Workflow
+
+### 1. Create an Issue
+
+```bash
+bd create "Feature: Add new validator" --priority 1
+# Output: Created issue: agent-xyz
+```
+
+### 2. Start Work
+
+```bash
+git checkout -b task/agent-xyz-new-validator
+bd state agent-xyz in_progress
+```
+
+### 3. Develop Locally
+
+```bash
+# Run local CI simulation
+./scripts/ci-local.sh
+
+# This runs:
+# - Ruff linting
+# - Ruff formatting
+# - Pytest
+# - Bandit security scan
+# - Beads validation
+```
+
+### 4. Commit and Push
+
+```bash
+git add .
+git commit -m "feat: Add new validator for agent-xyz"
+git push origin task/agent-xyz-new-validator
+```
+
+### 5. Create Pull Request
+
+```bash
+gh pr create --title "feat: Add new validator (agent-xyz)" \
+  --body "Implements agent-xyz. Closes agent-xyz."
+```
+
+**Note**: PR title/body must reference the Beads issue ID
+
+### 6. CI Validation
+
+- PR CI runs tests, security scan, Beads sync
+- If passes: Ready for review
+- If fails: Fix issues and push again
+
+### 7. Merge
+
+- Merge PR to `main`
+- Post-merge CI runs
+- **If CI passes**: Beads issue auto-closed ✅
+- **If CI fails**: New P0 issue auto-created 🚨
+
+### 8. Retrospective
+
+```bash
+# Capture lessons learned
+bd comments add agent-xyz "Learned: X, Y, Z"
+```
+
+## File Structure
+
+```
+agent-harness/
+├── .agent/                          # Agent-specific configuration
+│   ├── rules/
+│   │   ├── checklists/              # JSON validation rules
+│   │   │   ├── initialization.json
+│   │   │   ├── planning.json
+│   │   │   ├── execution.json
+│   │   │   ├── finalization.json
+│   │   │   ├── retrospective.json
+│   │   │   └── clean_state.json
+│   │   └── sop_checklist.schema.json
+│   └── docs/                        # Documentation
+├── .github/
+│   └── workflows/
+│       ├── pr-ci.yml                # PR validation workflow
+│       └── post-merge-ci.yml        # Post-merge automation
+├── src/
+│   └── agent_harness/
+│       ├── nodes/                   # Orchestrator nodes
+│       │   ├── initialization.py
+│       │   ├── execution.py
+│       │   └── finalization.py
+│       ├── compliance.py            # 43+ validators
+│       ├── checklists.py            # JSON loader
+│       ├── state.py                 # ProtocolState model
+│       ├── persistence.py           # SQLite integration
+│       ├── session_tracker.py       # Session management
+│       └── engine.py                # Core orchestration
+├── tests/                           # Test suite
+│   ├── test_harness_full.py
+│   ├── test_harness_hil.py
+│   └── test_inner_harness.py
+├── scripts/
+│   └── ci-local.sh                  # Local CI simulation
+├── .pre-commit-config.yaml          # Pre-commit hooks
+├── pyproject.toml                   # Python dependencies
+└── README.md                        # This file
+```
+
+## Inspiration & Lineage
+
+The Agentic Protocol Harness draws inspiration from several pioneering systems:
+
+### oh-my-opencode
+
+**What**: Task completion patterns and checklist-driven workflows
+
+**Influence**: The concept of programmatic task validation (e.g., checking all tasks in `task.md` are marked complete) comes from oh-my-opencode's approach to structured agent workflows.
+
+**Reference**: `finalization_validator.py` uses the "oh-my-opencode pattern" for task completion checks.
+
+### LangGraph
+
+**What**: Graph-based workflow orchestration
+
+**Influence**: The two-tier architecture and conditional edge pattern are direct applications of LangGraph's state machine model.
+
+**Why**: Provides structural guarantees that prompt-based systems cannot achieve.
+
+### Beads
+
+**What**: CLI-first issue tracking with JSONL storage
+
+**Influence**: Branch-issue coupling and metadata sync patterns are designed around Beads' lightweight, automation-friendly design.
+
+**Why**: Traditional issue trackers (Jira, GitHub Issues) are too heavyweight for agent automation.
+
+### Test-Driven Development (TDD)
+
+**What**: Tests-first development methodology
+
+**Influence**: The harness makes TDD structurally enforced rather than optional.
+
+**Why**: Prevents agents from shipping untested code.
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.11+
+- Git
+- [Beads CLI](https://github.com/steveyegge/beads)
+- [uv](https://github.com/astral-sh/uv) (recommended) or pip
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/marcdhansen/agent-harness.git
+cd agent-harness
+
+# Install dependencies
+uv sync --all-extras --dev
+
+# Install pre-commit hooks
+pre-commit install
+
+# Initialize Beads
+bd init
+```
+
+### Run Tests
+
+```bash
+# Run all tests
+uv run pytest tests/
+
+# Run with coverage
+uv run pytest --cov=src/agent_harness tests/
+```
+
+### Run Local CI
 
 ```bash
 ./scripts/ci-local.sh
 ```
 
-### Pre-commit Hooks
+## Contributing
 
-The harness uses `pre-commit` to ensure code quality at commit time.
+Contributions welcome! Please:
 
-```bash
-pre-commit install
-```
+1. Create a Beads issue: `bd create "Your feature"`
+2. Create a branch: `git checkout -b task/ISSUE_ID-description`
+3. Make changes and add tests
+4. Run local CI: `./scripts/ci-local.sh`
+5. Create PR with Beads ID in title/body
 
-#### Agent Harness Git Hooks
+## License
 
-This project includes git hooks for cleanup enforcement.
-
-**Installation:**
-
-```bash
-bash .harness/install_hooks.sh
-```
-
-**Features:**
-- Pre-commit cleanup validation (blocks temp files like `*.tmp`, `debug_*`, `*.db`)
-- Extensible component architecture
-
-**Local CI Simulation:**
-
-```bash
-bash .harness/scripts/simulate-ci-cleanup.sh
-```
-
-**Configuration:**
-Edit `.harness/cleanup_patterns.txt` to add/remove patterns.
-
-### CI/CD Enforcement
-
-PRs are automatically validated for temporary files before merge via `.github/workflows/cleanup-validation.yml`.
-
-**What happens when validation fails:**
-1. PR check fails with ❌ status
-2. Bot comments with list of violating files  
-3. Merge button is blocked
-4. Developer must remove files and push
-
-### Session Cleanup Enforcement (agent-6x9.3)
-
-The agent harness enforces workspace cleanup at two checkpoints via `check_protocol_compliance.py`:
-
-**1. Session Start (Soft Enforcement)**
-```bash
-python check_protocol_compliance.py --init --mode simple --issue agent-6x9
-```
-- Scans for leftover artifacts from previous sessions
-- If found: warns and offers cleanup options
-- Creates session lock
-
-**2. Session End (Hard Enforcement)**
-```bash
-python check_protocol_compliance.py --close
-```
-- Validates workspace is clean
-- Blocks closure if violations exist
-- Removes session lock
-
-**Check Status:**
-```bash
-python check_protocol_compliance.py --status
-```
-
-**Force Close (Emergency):**
-```bash
-python check_protocol_compliance.py --close --skip-validation
-```
-⚠️ Warning: This bypasses enforcement.
-
-### Worktree Cleanup Validation (agent-6x9.4)
-
-Git worktrees are validated during workspace cleanup checks.
-
-#### Integration Points
-
-Worktree validation is integrated into:
-1. **Finalization checklist** - `check_protocol_compliance.py --finalize`
-2. **Manual cleanup** - `.harness/scripts/cleanup-worktrees.sh`
-
-#### GitWorktreeManager API
-```python
-from agent_harness import GitWorktreeManager
-
-manager = GitWorktreeManager()
-
-# Create isolated worktree
-wt_path = manager.create_worktree("agent-1")
-
-# Validate before removal
-violations = manager.validate_worktree_cleanup(wt_path)
-if violations:
-    print(f"Cleanup required: {violations}")
-
-# Remove with validation
-manager.remove_worktree("agent-1")  # Blocks if dirty
-manager.remove_worktree("agent-1", validate_cleanup=False)  # Force
-```
-
-#### Validation Checks
-
-Worktree cleanup validates:
-- ✅ No temporary files (*.tmp, debug_*, etc.)
-- ✅ No uncommitted changes
-- ✅ No large files (>10MB)
-
-#### Manual Cleanup
-```bash
-# List and clean orphaned worktrees
-bash .harness/scripts/cleanup-worktrees.sh
-```
-
-#### Architecture
-```
-Finalization Checklist
-  ↓
-check_workspace_cleanup()
-  ↓
-├─ Pattern-based validation (6x9.1)
-└─ Worktree validation (6x9.4) ← NEW
-     ↓
-  GitWorktreeManager.validate_worktree_cleanup()
-```
-
-#### Error Handling
-```
-❌ Worktree cleanup violations found:
-  - Worktree worktree-agent-1 has violations: 
-    Temporary files (*.tmp): ['debug.tmp'];
-    Uncommitted changes in worktree
-
-Fix: bash .harness/scripts/cleanup-worktrees.sh
-```
-
-## 📦 Core Libraries
-
-- **LangGraph**: Workflow orchestration and state management.
-- **Pydantic**: Robust schema definition for the `ProtocolState`.
-- **SQLite**: Reliable persistent checkpointing.
-- **Beads**: Issue tracking and branch-issue coupling.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-## Quick Reference
-
-### 🚀 Daily Commands
-```bash
-# Start work
-python check_protocol_compliance.py --init
-
-# Check status
-bash .harness/scripts/status-dashboard.sh
-
-# Validate before commit
-bash .harness/scripts/validate-cleanup.sh
-
-# Pre-PR checklist
-bash .harness/scripts/pre-pr-checklist.sh
-
-# End work
-python check_protocol_compliance.py --close
-```
-
-### 📚 Documentation
-- **[User Guide](.harness/USER_GUIDE.md)** - Complete usage guide
-- **[Troubleshooting](.harness/TROUBLESHOOTING.md)** - Common issues & fixes
-- **[README](README.md)** - System overview (this file)
-
-### 🛠️ Utility Scripts
-| Script | Purpose |
-|--------|---------|
-| `validate-cleanup.sh` | Quick validation check |
-| `auto-cleanup.sh` | Automatic violation removal |
-| `pre-pr-checklist.sh` | Comprehensive pre-PR check |
-| `status-dashboard.sh` | System status overview |
-| `cleanup-worktrees.sh` | Worktree management |
-| `install_hooks.sh` | Install/update git hooks |
-
-### 🎯 Getting Started
-1. **Install:** `bash .harness/install_hooks.sh`
-2. **Read:** `.harness/USER_GUIDE.md`
-3. **Start session:** `python check_protocol_compliance.py --init`
-4. **Work!** The system enforces cleanup automatically
-
-### 📞 Need Help?
-- **Quick check:** `bash .harness/scripts/status-dashboard.sh`
-- **Troubleshooting:** See `.harness/TROUBLESHOOTING.md`
-- **Team:** #agent-harness Slack channel
-
-## 📜 License
-
-MIT
+**Built with ❤️ for reliable AI agent orchestration**
