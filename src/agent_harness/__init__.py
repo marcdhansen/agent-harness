@@ -2,6 +2,11 @@
 
 from agent_harness.engine import create_harness_graph, run_harness
 from agent_harness.inner import InnerHarness
+from agent_harness.session_tracker import (
+    CleanupViolationError,
+    SessionTracker,
+    ValidationResult,
+)
 from agent_harness.state import ProtocolState
 
 __all__ = [
@@ -9,6 +14,9 @@ __all__ = [
     "ProtocolState",
     "create_harness_graph",
     "run_harness",
+    "SessionTracker",
+    "CleanupViolationError",
+    "ValidationResult",
 ]
 
 __version__ = "0.1.0"

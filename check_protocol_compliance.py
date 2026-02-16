@@ -7,14 +7,14 @@ Provides session management, hook installation, and protocol compliance checks.
 import argparse
 import shutil
 import sys
-from datetime import datetime
+import time
 from pathlib import Path
 
 # Add src to path for absolute imports if needed
 sys.path.append(str(Path(__file__).parent / "src"))
 
 from agent_harness.compliance import get_active_issue_id
-from agent_harness.session_tracker import SessionTracker
+from agent_harness.session_tracker import CleanupViolationError, SessionTracker
 
 
 def install_hooks():
@@ -38,9 +38,14 @@ def install_hooks():
 
 
 def init_session(mode: str, issue_id: str):
-    """Initialize a new harness session."""
+    """Initialize a new harness session with cleanup validation."""
     tracker = SessionTracker()
     try:
+        # Soft cleanup validation at session start
+        validation = tracker.validate_session_start()
+        if validation.violations:
+            tracker.handle_session_start_violations(validation)
+
         session_id = tracker.init_session(mode=mode, issue_id=issue_id)
         print(f"✅ Session initialized: {session_id}")
         print(f"Mode: {mode}")
@@ -50,27 +55,51 @@ def init_session(mode: str, issue_id: str):
         sys.exit(1)
 
 
-def close_session():
-    """Close the current harness session."""
+def close_session(skip_validation: bool = False):
+    """Close the current harness session with cleanup validation."""
     tracker = SessionTracker()
     session = tracker.get_session()
     if not session:
         print("ℹ️ No active session to close.")
         return
 
-    tracker.close_session()
-    print(f"✅ Session {session['id']} closed.")
+    try:
+        tracker.close_session(validate_cleanup=not skip_validation)
+        print(f"✅ Session {session['id']} closed.")
+    except CleanupViolationError as e:
+        print(f"\n❌ Cannot close session:\n{e}")
+        print("\nOptions:")
+        print("  1. Clean up violations: rm <file>")
+        print(
+            "  2. Force close (skip validation): python check_protocol_compliance.py --close --skip-validation"
+        )
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Error closing session: {e}")
+        sys.exit(1)
 
 
 def status():
-    """Show current session status."""
+    """Show current session status with cleanup validation."""
     tracker = SessionTracker()
     session = tracker.get_session()
     if session:
+        duration = int((time.time() - session["started_at"]) / 60)
         print(f"✅ Active Session: {session['id']}")
         print(f"   Mode: {session['mode']}")
         print(f"   Issue: {session['issue_id']}")
-        print(f"   Started: {datetime.fromtimestamp(session['started_at']).isoformat()}")
+        print(f"   Duration: {duration} minutes")
+
+        # Show cleanup status
+        validation = tracker.validate_finalization()
+        if validation.violations:
+            print(f"\n⚠️  Cleanup validation: {len(validation.violations)} violations found")
+            for v in validation.violations[:5]:
+                print(f"   - {v}")
+            if len(validation.violations) > 5:
+                print(f"   ... and {len(validation.violations) - 5} more")
+        else:
+            print("\n✅ Cleanup validation: OK")
     else:
         print("❌ No active harness session.")
 
@@ -86,6 +115,11 @@ def main():
     )
     parser.add_argument("--mode", default="full", help="Session mode (simple/full)")
     parser.add_argument("--issue", help="Beads issue ID (defaults to active branch issue)")
+    parser.add_argument(
+        "--skip-validation",
+        action="store_true",
+        help="Skip cleanup validation when closing session (use with caution)",
+    )
 
     args = parser.parse_args()
 
@@ -109,7 +143,7 @@ def main():
             sys.exit(1)
         init_session(args.mode, issue_id)
     elif args.close:
-        close_session()
+        close_session(skip_validation=args.skip_validation)
     elif args.status:
         status()
     else:

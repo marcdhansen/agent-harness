@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from agent_harness.compliance import check_branch_info, get_active_issue_id
 
 

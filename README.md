@@ -126,6 +126,37 @@ PRs are automatically validated for temporary files before merge via `.github/wo
 3. Merge button is blocked
 4. Developer must remove files and push
 
+### Session Cleanup Enforcement (agent-6x9.3)
+
+The agent harness enforces workspace cleanup at two checkpoints via `check_protocol_compliance.py`:
+
+**1. Session Start (Soft Enforcement)**
+```bash
+python check_protocol_compliance.py --init --mode simple --issue agent-6x9
+```
+- Scans for leftover artifacts from previous sessions
+- If found: warns and offers cleanup options
+- Creates session lock
+
+**2. Session End (Hard Enforcement)**
+```bash
+python check_protocol_compliance.py --close
+```
+- Validates workspace is clean
+- Blocks closure if violations exist
+- Removes session lock
+
+**Check Status:**
+```bash
+python check_protocol_compliance.py --status
+```
+
+**Force Close (Emergency):**
+```bash
+python check_protocol_compliance.py --close --skip-validation
+```
+⚠️ Warning: This bypasses enforcement.
+
 ## 📦 Core Libraries
 
 - **LangGraph**: Workflow orchestration and state management.

@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+
 from agent_harness.inner import InnerHarness, Tool
 from agent_harness.security import SecurityException
 from agent_harness.session_tracker import SessionTracker
