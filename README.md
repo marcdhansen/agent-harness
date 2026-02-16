@@ -93,6 +93,39 @@ The harness uses `pre-commit` to ensure code quality at commit time.
 pre-commit install
 ```
 
+#### Agent Harness Git Hooks
+
+This project includes git hooks for cleanup enforcement.
+
+**Installation:**
+
+```bash
+bash .harness/install_hooks.sh
+```
+
+**Features:**
+- Pre-commit cleanup validation (blocks temp files like `*.tmp`, `debug_*`, `*.db`)
+- Extensible component architecture
+
+**Local CI Simulation:**
+
+```bash
+bash .harness/scripts/simulate-ci-cleanup.sh
+```
+
+**Configuration:**
+Edit `.harness/cleanup_patterns.txt` to add/remove patterns.
+
+### CI/CD Enforcement
+
+PRs are automatically validated for temporary files before merge via `.github/workflows/cleanup-validation.yml`.
+
+**What happens when validation fails:**
+1. PR check fails with ❌ status
+2. Bot comments with list of violating files  
+3. Merge button is blocked
+4. Developer must remove files and push
+
 ## 📦 Core Libraries
 
 - **LangGraph**: Workflow orchestration and state management.
