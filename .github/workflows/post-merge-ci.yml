@@ -62,7 +62,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -x
           export PATH="$HOME/.local/bin:$PATH"
+          
+          echo "=== CI Failure Handler Debug ==="
+          echo "Tests outcome: ${{ steps.tests.outcome }}"
+          echo "Security outcome: ${{ steps.security.outcome }}"
+          echo "Sync outcome: ${{ steps.sync.outcome }}"
+          echo "bd available: $(command -v bd &> /dev/null && echo 'yes' || echo 'no')"
           
           # Check if beads is available
           if ! command -v bd &> /dev/null; then
@@ -77,7 +84,7 @@ jobs:
               **Triggered by:** @${{ github.actor }}
               
               *Note: This is an automated fallback issue because the 'bd' command was unavailable.*" \
-              --label "ci-failure,automated,critical" || echo "::error::Failed to create GitHub issue fallback"
+              --label "ci-failure" --label "automated" --label "critical" || { ERROR_MSG=$(gh issue create --title "test" --body "test" 2>&1 || true); echo "::error::Failed to create GitHub issue fallback: $ERROR_MSG"; }
             exit 0
           fi
 
@@ -92,7 +99,7 @@ jobs:
 
             bd create "🚨 CRITICAL: Post-merge CI failure on main" \
               -t bug -p 0 \
-              -l "ci-failure,automated,critical" \
+              -l "ci-failure" -l "automated" -l "critical" \
               -d "Post-merge CI pipeline failed. 
               
               **Failed checks:**
