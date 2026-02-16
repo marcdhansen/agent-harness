@@ -1,0 +1,44 @@
+# Cleanup Patterns - agent-6x9.1
+# Patterns for temporary files that should not be committed
+# Lines starting with # are comments, empty lines ignored
+
+
+# Generic temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+
+# Debug/test artifacts
+debug_*
+*_scratch.*
+test_temp_*
+WIP_*
+*.notes
+
+
+# Specific known artifacts (from Phase 0 cleanup)
+ci_test.txt
+run_log.txt
+test_output_*.txt
+trigger_ci
+friction.log
+friction.md
+reflection_input.json
+
+
+# Database files (runtime state)
+agent_*.db
+*_state*.db
+harness_*.db
+test_harness_*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+
+# Session artifacts (runtime)
+.harness/session_*.lock
+.harness/tool_usage_*.log
