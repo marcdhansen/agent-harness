@@ -6,15 +6,21 @@ set -e
 
 # Parse arguments
 FORCE_MODE=false
+DRY_RUN=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         -y|--yes|--force)
             FORCE_MODE=true
             shift
             ;;
+        -d|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
         -h|--help)
-            echo "Usage: $0 [-y|--yes|--force]"
+            echo "Usage: $0 [-y|--yes|--force] [--dry-run]"
             echo "  -y, --yes, --force  Skip confirmation prompt (for agents/CI)"
+            echo "  -d, --dry-run       Show files that would be deleted without deleting"
             exit 0
             ;;
         *)
@@ -32,6 +38,17 @@ fi
 echo "🧹 Automatic Cleanup Utility"
 echo ""
 
+# Dry-run mode: check if there are violations without exiting
+if [ "$DRY_RUN" = true ]; then
+    bash .harness/scripts/validate-cleanup.sh || true
+    echo ""
+    echo "🔍 Dry-run mode: No files were deleted"
+    echo ""
+    echo "To actually delete these files, run without --dry-run:"
+    echo "  bash .harness/scripts/auto-cleanup.sh --yes"
+    exit 0
+fi
+
 # Dry run first
 bash .harness/scripts/validate-cleanup.sh > /dev/null 2>&1
 if [ $? -eq 0 ]; then
@@ -45,6 +62,15 @@ echo ""
 echo "Files to be deleted:"
 bash .harness/scripts/validate-cleanup.sh 2>&1 | grep "^  -" || true
 echo ""
+
+# Dry-run mode: show files without deleting
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 Dry-run mode: No files were deleted"
+    echo ""
+    echo "To actually delete these files, run without --dry-run:"
+    echo "  bash .harness/scripts/auto-cleanup.sh --yes"
+    exit 0
+fi
 
 # Skip confirmation in agent/CI mode
 if [ "$FORCE_MODE" = false ] && [ -t 0 ]; then

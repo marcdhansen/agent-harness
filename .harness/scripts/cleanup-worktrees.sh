@@ -5,15 +5,21 @@ set -e
 
 # Parse arguments
 FORCE_MODE=false
+DRY_RUN=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         -y|--yes|--force)
             FORCE_MODE=true
             shift
             ;;
+        -d|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
         -h|--help)
-            echo "Usage: $0 [-y|--yes|--force]"
+            echo "Usage: $0 [-y|--yes|--force] [--dry-run]"
             echo "  -y, --yes, --force  Skip confirmation prompt (for agents/CI)"
+            echo "  -d, --dry-run       Show worktrees that would be removed without removing"
             exit 0
             ;;
         *)
@@ -92,7 +98,13 @@ done
 echo ""
 
 # Agent/CI mode: skip confirmation
-if [ "$FORCE_MODE" = true ]; then
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 Dry-run mode: No worktrees would be removed"
+    echo ""
+    echo "To actually remove these worktrees, run without --dry-run:"
+    echo "  bash .harness/scripts/cleanup-worktrees.sh --yes"
+    exit 0
+elif [ "$FORCE_MODE" = true ]; then
     echo "🤖 Agent/CI mode: Removing orphaned worktrees (--yes flag detected)"
     for wt in "${ORPHANED[@]}"; do
         echo "Removing: $wt"
