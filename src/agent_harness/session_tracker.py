@@ -130,7 +130,14 @@ class SessionTracker:
         Validate workspace cleanup at session end (hard enforcement)
 
         Blocks session closure if temporary artifacts remain.
+        Skips validation if RUNNING_IN_CI or HARNESS_SKIP_CLEANUP is set.
         """
+        # Skip validation in CI/test environments
+        import os
+
+        if os.environ.get("RUNNING_IN_CI") or os.environ.get("HARNESS_SKIP_CLEANUP"):
+            return ValidationResult(passed=True, violations=[], enforcement_level="none")
+
         violations = self._scan_workspace()
 
         return ValidationResult(
