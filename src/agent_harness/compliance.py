@@ -1077,7 +1077,7 @@ def check_workspace_cleanup(*args) -> tuple[bool, str]:
     except ImportError:
         # GitWorktreeManager not available - skip worktree check
         pass
-    except Exception as e:
+    except Exception:
         # Error checking worktrees - log warning but don't block
         pass
 

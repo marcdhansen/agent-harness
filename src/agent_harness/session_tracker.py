@@ -1,9 +1,41 @@
+import argparse
 import json
+import os
+import sys
 import time
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
 from typing import Any
+
+
+def get_cleanup_args() -> argparse.Namespace:
+    """Parse command-line arguments for cleanup scripts."""
+    parser = argparse.ArgumentParser(
+        description="Session cleanup utility",
+        add_help=False,
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        "--force",
+        action="store_true",
+        dest="force",
+        help="Skip confirmation prompt (for agents/CI)",
+    )
+    parser.add_argument(
+        "-d",
+        "--dry-run",
+        action="store_true",
+        help="Show files that would be cleaned without cleaning",
+    )
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="store_true",
+        help="Show this help message",
+    )
+    return parser.parse_args()
 
 
 @dataclass
@@ -196,8 +228,19 @@ class SessionTracker:
 
         return patterns
 
-    def handle_session_start_violations(self, validation: ValidationResult):
-        """Handle violations at session start (interactive)"""
+    def handle_session_start_violations(
+        self,
+        validation: ValidationResult,
+        force: bool = False,
+        dry_run: bool = False,
+    ):
+        """Handle violations at session start (interactive or agent mode).
+
+        Args:
+            validation: The validation result containing violations
+            force: If True, skip confirmation and proceed with cleanup (--yes/--force flag)
+            dry_run: If True, show what would be cleaned without actually cleaning
+        """
         print("\n⚠️  WARNING: Leftover artifacts from previous session")
         print("\nFound temporary files:")
         for v in validation.violations[:10]:
@@ -206,24 +249,54 @@ class SessionTracker:
         if len(validation.violations) > 10:
             print(f"  ... and {len(validation.violations) - 10} more")
 
-        print("\nOptions:")
-        print("1. Clean up now (recommended)")
-        print("2. Continue anyway (must clean before PR)")
-        print("3. Abort")
+        # Check environment variables for agent mode (for backward compatibility)
+        env_force = os.environ.get("HARNESS_SESSION_START_CHOICE")
+        if env_force in ("yes", "force", "1", "true"):
+            force = True
 
-        try:
-            choice = input("\nEnter choice [1-3]: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            choice = "2"
+        # Dry-run mode: show what would be cleaned without cleaning
+        if dry_run:
+            print("\n🔍 Dry-run mode: No files would be cleaned")
+            print("")
+            print("To actually clean these files, run without --dry-run:")
+            print("  python -m agent_harness.session_tracker --yes")
+            return
 
-        if choice == "1":
-            self._cleanup_violations(validation.violations)
-            print("✅ Cleanup complete\n")
-        elif choice == "3":
-            raise Exception("Session initialization aborted by user")
+        # Determine if we're in agent mode (non-interactive or force flag)
+        is_agent = not sys.stdin.isatty() or force
+
+        if is_agent:
+            if force:
+                # Agent mode with --yes: auto-clean
+                print("\n🤖 Agent mode: Cleaning up violations (--yes flag detected)")
+                self._cleanup_violations(validation.violations)
+                print("✅ Cleanup complete\n")
+            else:
+                # Agent mode without --yes: continue with warning
+                print(
+                    "\n🤖 Agent mode detected: Continuing with violations (must clean before PR)\n"
+                )
+                self._log_override("session_start", validation.violations)
         else:
-            print("⚠️  Continuing with violations (must clean before PR)\n")
-            self._log_override("session_start", validation.violations)
+            # Interactive mode
+            print("\nOptions:")
+            print("1. Clean up now (recommended)")
+            print("2. Continue anyway (must clean before PR)")
+            print("3. Abort")
+
+            try:
+                choice = input("\nEnter choice [1-3]: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                choice = "2"
+
+            if choice == "1":
+                self._cleanup_violations(validation.violations)
+                print("✅ Cleanup complete\n")
+            elif choice == "3":
+                raise Exception("Session initialization aborted by user")
+            else:
+                print("⚠️  Continuing with violations (must clean before PR)\n")
+                self._log_override("session_start", validation.violations)
 
     def _cleanup_violations(self, violations: list[str]):
         """Remove violation files"""

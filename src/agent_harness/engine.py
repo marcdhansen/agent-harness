@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from langgraph.graph import END, StateGraph
 
 from agent_harness.nodes.execution import execution_node, human_approval_node
@@ -50,9 +52,7 @@ def create_harness_graph(checkpointer=None):
     return builder.compile(checkpointer=checkpointer, interrupt_before=["approval"])
 
 
-def run_harness(
-    process_id: str, description: str, thread_id: str, db_path: str = "harness_state.db"
-):
+def run_harness(process_id: str, description: str, thread_id: str, db_path: str | None = None):
     """
     Run the compiled harness graph.
     """
