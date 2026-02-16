@@ -228,6 +228,54 @@ Fix: bash .harness/scripts/cleanup-worktrees.sh
 - **SQLite**: Reliable persistent checkpointing.
 - **Beads**: Issue tracking and branch-issue coupling.
 
+---
+
+## Quick Reference
+
+### 🚀 Daily Commands
+```bash
+# Start work
+python check_protocol_compliance.py --init
+
+# Check status
+bash .harness/scripts/status-dashboard.sh
+
+# Validate before commit
+bash .harness/scripts/validate-cleanup.sh
+
+# Pre-PR checklist
+bash .harness/scripts/pre-pr-checklist.sh
+
+# End work
+python check_protocol_compliance.py --close
+```
+
+### 📚 Documentation
+- **[User Guide](.harness/USER_GUIDE.md)** - Complete usage guide
+- **[Troubleshooting](.harness/TROUBLESHOOTING.md)** - Common issues & fixes
+- **[README](README.md)** - System overview (this file)
+
+### 🛠️ Utility Scripts
+| Script | Purpose |
+|--------|---------|
+| `validate-cleanup.sh` | Quick validation check |
+| `auto-cleanup.sh` | Automatic violation removal |
+| `pre-pr-checklist.sh` | Comprehensive pre-PR check |
+| `status-dashboard.sh` | System status overview |
+| `cleanup-worktrees.sh` | Worktree management |
+| `install_hooks.sh` | Install/update git hooks |
+
+### 🎯 Getting Started
+1. **Install:** `bash .harness/install_hooks.sh`
+2. **Read:** `.harness/USER_GUIDE.md`
+3. **Start session:** `python check_protocol_compliance.py --init`
+4. **Work!** The system enforces cleanup automatically
+
+### 📞 Need Help?
+- **Quick check:** `bash .harness/scripts/status-dashboard.sh`
+- **Troubleshooting:** See `.harness/TROUBLESHOOTING.md`
+- **Team:** #agent-harness Slack channel
+
 ## 📜 License
 
 MIT
