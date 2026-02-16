@@ -30,3 +30,7 @@ debrief.md
 .harness/tool_usage.log
 .harness/cleanup_overrides.log
 .harness/archive/
+
+# Agent Harness - User-specific config (agent-6x9.6)
+.harness/config.json
+

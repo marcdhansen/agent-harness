@@ -698,6 +698,23 @@ gh pr create --title "feat: Add new validator (agent-xyz)" \
 bd comments add agent-xyz "Learned: X, Y, Z"
 ```
 
+### 🤖 For AI Agents (Non-Interactive)
+
+```bash
+# Option 1: CLI arguments (recommended)
+python check_protocol_compliance.py init --mode simple --issue-id TASK-123
+
+# Option 2: Environment variables
+export HARNESS_MODE=simple HARNESS_ISSUE_ID=TASK-123
+python check_protocol_compliance.py init
+
+# Option 3: Config file
+# Edit .harness/config.json
+python check_protocol_compliance.py init
+```
+
+See [Agent Usage Guide](.harness/USER_GUIDE.md#-agent-friendly-usage-agent-6x96) for details.
+
 ## File Structure
 
 ```

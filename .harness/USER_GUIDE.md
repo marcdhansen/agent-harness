@@ -256,6 +256,194 @@ bash .harness/scripts/validate-cleanup.sh
 
 5. **Don't bypass enforcement** unless absolutely necessary
 
+## 🤖 Agent-Friendly Usage (agent-6x9.6)
+
+### Overview
+
+Scripts support both **interactive** (human) and **non-interactive** (agent) modes.
+
+### Input Priority
+
+Values are resolved in this order:
+1. **CLI arguments** (highest priority)
+2. **Environment variables**
+3. **Config file** (`.harness/config.json`)
+4. **Interactive prompts** (if terminal detected)
+5. **Default values** (lowest priority)
+
+### For AI Agents (Non-Interactive)
+
+#### Method 1: CLI Arguments (Recommended)
+```bash
+# Initialize session
+python check_protocol_compliance.py init --mode simple --issue-id TASK-123
+
+# Close session
+python check_protocol_compliance.py close
+
+# Check status
+python check_protocol_compliance.py status
+```
+
+**Pros:**
+- ✅ Explicit and clear
+- ✅ Works everywhere
+- ✅ No configuration needed
+
+#### Method 2: Environment Variables
+```bash
+# Set once
+export HARNESS_MODE=simple
+export HARNESS_ISSUE_ID=TASK-123
+export HARNESS_NON_INTERACTIVE=true
+
+# Use commands normally
+python check_protocol_compliance.py init
+python check_protocol_compliance.py close
+```
+
+**Pros:**
+- ✅ Good for CI/CD
+- ✅ Consistent across commands
+- ✅ Easy to set in shell profile
+
+#### Method 3: Config File
+```json
+// .harness/config.json
+{
+  "mode": "simple",
+  "issue_id": "TASK-123"
+}
+```
+```bash
+# Commands use config automatically
+python check_protocol_compliance.py init
+```
+
+**Pros:**
+- ✅ Persistent settings
+- ✅ No repeated typing
+- ✅ Project-specific defaults
+
+### Terminal Detection
+
+Scripts automatically detect non-interactive contexts:
+- ✅ Piped input (`echo "..." | python ...`)
+- ✅ CI environments (GitHub Actions, GitLab CI, etc.)
+- ✅ `HARNESS_NON_INTERACTIVE=true` env var
+- ✅ Non-TTY stdin
+
+### Agent Workflow Example
+```bash
+# Agent workflow (non-interactive)
+
+# 1. Start session
+python check_protocol_compliance.py init --mode simple --issue-id TASK-456
+
+# 2. Do work
+# ... agent performs task ...
+
+# 3. Check status
+python check_protocol_compliance.py status
+
+# 4. Validate cleanup
+bash .harness/scripts/validate-cleanup.sh
+
+# 5. Close session
+python check_protocol_compliance.py close
+
+# All commands work without prompts!
+```
+
+### Error Handling for Agents
+
+If required values are missing, scripts fail with clear error messages:
+```
+❌ Error: Mode is required but not provided
+
+Provide via:
+  CLI arg:  --mode <value>
+  Env var:  HARNESS_MODE=<value>
+  Config:   .harness/config.json (add 'mode: <value>')
+
+Example:
+  python check_protocol_compliance.py init --mode simple
+```
+
+### CI/CD Integration
+```yaml
+# GitHub Actions example
+- name: Initialize harness
+  env:
+    HARNESS_MODE: simple
+    HARNESS_ISSUE_ID: ${{ github.event.issue.number }}
+  run: |
+    python check_protocol_compliance.py init
+
+- name: Run task
+  run: |
+    # ... do work ...
+
+- name: Close harness
+  run: |
+    python check_protocol_compliance.py close
+```
+
+### Configuration Reference
+
+#### Environment Variables
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `HARNESS_MODE` | Session mode | `simple` or `full` |
+| `HARNESS_ISSUE_ID` | Beads issue ID | `TASK-123` |
+| `HARNESS_NON_INTERACTIVE` | Force non-interactive | `true` |
+
+#### Config File (.harness/config.json)
+```json
+{
+  "mode": "simple",
+  "issue_id": "TASK-123",
+  "auto_save": true,
+  "last_session": "..."
+}
+```
+
+### Troubleshooting
+
+**Q: Script still prompts for input**
+```bash
+# Ensure all required values provided
+python check_protocol_compliance.py init --mode simple --issue-id TASK-123
+
+# Or set environment
+export HARNESS_NON_INTERACTIVE=true
+
+# Or check terminal detection
+python -c "import sys; print('TTY:', sys.stdin.isatty())"
+```
+
+**Q: "Module not found" error**
+```bash
+# Install package
+pip install -e .
+
+# Or add to PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/src"
+```
+
+**Q: Config file not loaded**
+```bash
+# Check file exists
+ls -la .harness/config.json
+
+# Check JSON is valid
+python -m json.tool .harness/config.json
+
+# Test loading
+python -c "import json; print(json.load(open('.harness/config.json')))"
+```
+
 ## Emergency Procedures
 
 ### Production Hotfix

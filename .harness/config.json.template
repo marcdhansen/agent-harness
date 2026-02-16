@@ -1,0 +1,13 @@
+{
+  "_comment": "Agent Harness Configuration Template",
+  "_usage": "Copy to .harness/config.json and customize",
+
+  "mode": "simple",
+  "issue_id": "",
+
+  "_comment_auto_save": "Auto-save session values after init",
+  "auto_save": true,
+
+  "_comment_last_session": "Automatically populated",
+  "last_session": ""
+}
