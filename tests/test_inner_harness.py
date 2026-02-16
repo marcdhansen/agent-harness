@@ -1,6 +1,7 @@
 """Tests for InnerHarness - the minimal Pi Mono-style agent loop."""
 
 import pytest
+
 from agent_harness.inner import (
     BashTool,
     EditTool,

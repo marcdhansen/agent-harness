@@ -1,9 +1,10 @@
 import os
 
-from agent_harness.persistence import get_sqlite_checkpointer
-from agent_harness.state import ProtocolState
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.graph import END, StateGraph
+
+from agent_harness.persistence import get_sqlite_checkpointer
+from agent_harness.state import ProtocolState
 
 
 def sample_node(state: ProtocolState) -> ProtocolState:
