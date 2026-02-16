@@ -5,6 +5,7 @@
 This guide explains how to integrate [Beads](https://github.com/steveyegge/beads) (a git-based issue tracker) with GitHub Actions CI/CD pipelines to automatically manage issues based on build success/failure.
 
 **The workflow:**
+
 1. Developer/agent creates issues using `bd` CLI
 2. Work is tracked in git via `.beads/` directory
 3. PR references beads issue IDs (e.g., "Fixes bd-a1b2")
@@ -14,6 +15,7 @@ This guide explains how to integrate [Beads](https://github.com/steveyegge/beads
 7. Changes sync back via git - all agents see updated state
 
 **Key benefits:**
+
 - ✅ No manual CI/CD babysitting
 - ✅ Git-native (no external databases)
 - ✅ Full audit trail in git history
@@ -161,6 +163,7 @@ See "Setup" section below for full workflow examples.
 Keep old workflow enabled alongside new workflow.
 
 **Monitor for 1-2 days:**
+
 - Compare outcomes
 - Check for discrepancies
 - Validate new workflow catches everything
@@ -183,6 +186,7 @@ See "Post-Merge CI" section below.
 #### Step 6: Full PR Test
 
 Create test PR that:
+
 - Passes all checks
 - Triggers issue close on merge
 - Validates end-to-end flow
@@ -207,11 +211,13 @@ This guide provides examples for both **Node.js/npm** and **Python/pytest/ruff**
 ### Key Differences
 
 **Node.js:**
+
 - Uses `package.json` scripts (e.g., `npm run lint`)
 - Pre-commit typically via Husky
 - `npm audit` for security
 
 **Python:**
+
 - Direct tool invocation (e.g., `ruff check .`)
 - Pre-commit via `.pre-commit-config.yaml`
 - Bandit for security scanning
@@ -811,16 +817,19 @@ This table shows how each check behaves across all three CI stages:
 ### Why This Architecture?
 
 **Pre-Commit (Local):**
+
 - **Philosophy:** Catch everything early, fail fast
 - **Goal:** Prevent broken code from entering git
 - **Trade-off:** Slightly slower commits, but cleaner history
 
 **PR CI:**
+
 - **Philosophy:** Gate on functionality, warn on style
 - **Goal:** Prevent broken code from reaching main
 - **Trade-off:** Longer PR cycle, but protected main branch
 
 **Post-Merge CI:**
+
 - **Philosophy:** Safety net, never block
 - **Goal:** Detect unexpected issues, track for fixes
 - **Trade-off:** Issues need manual resolution, but no blocking
@@ -828,6 +837,7 @@ This table shows how each check behaves across all three CI stages:
 ### Python-Specific Notes
 
 **Ruff combines linting + formatting:**
+
 ```bash
 # Pre-commit runs both
 ruff check --fix .    # Lint with auto-fix
@@ -840,6 +850,7 @@ ruff check .          # Verify (warns if fails)
 ```
 
 **Pytest structure matters:**
+
 ```bash
 # Pre-commit: Only fast unit tests
 pytest tests/unit -v
@@ -856,6 +867,7 @@ pytest tests/integration -v
 ### Node-Specific Notes
 
 **ESLint + Prettier separation:**
+
 ```bash
 # Pre-commit runs both
 npm run lint:fix      # ESLint with auto-fix
@@ -868,6 +880,7 @@ npm run lint          # Verify (warns if fails)
 ```
 
 **Test structure:**
+
 ```bash
 # Pre-commit: Fast unit tests only
 npm run test:unit
@@ -901,6 +914,7 @@ bd show bd-a1b2 --json     # Review issue details
 ```
 
 **During work:**
+
 ```bash
 # Reference issue in commits
 git commit -m "bd-a1b2: implement authentication"
@@ -914,6 +928,7 @@ bd update bd-a1b2 --status in_progress
 ```
 
 **After completing work:**
+
 ```bash
 # Close the issue
 bd close bd-a1b2 --reason "Implemented and tested"
@@ -926,6 +941,7 @@ git push
 ```
 
 **Important:** CI/CD will automatically:
+
 - Close issues when builds succeed (if referenced in commits)
 - Create issues when builds fail
 - Sync everything back via git
@@ -955,6 +971,7 @@ For clearer tracking, also reference issues in PR descriptions:
 Fixes bd-a1b2
 Addresses bd-f14c
 ```
+
 ```
 
 ## Usage Examples
@@ -1099,6 +1116,7 @@ $ git push
 **Best practice:** Different agents should handle development vs. code review to ensure fresh perspective and catch more issues.
 
 **Orchestrator responsibilities:**
+
 1. Assign work to developer agents
 2. Create review tasks for different reviewer agents
 3. Enforce policy: reviewer ≠ developer
@@ -1141,6 +1159,7 @@ $ git push
 #### 1. Agent Naming Convention
 
 Use consistent agent identifiers:
+
 ```bash
 # Developer agents
 export AGENT_ID="dev-agent-1"
@@ -1595,11 +1614,13 @@ This guide addresses three critical issues identified in initial review:
 **Problem:** Hardcoded pattern `bd-[a-f0-9]{4,6}` doesn't match custom formats like `agent-gbv.11`
 
 **Solution:** All scripts now use `${BEADS_ISSUE_PATTERN:-default}` with fallback:
+
 - GitHub Actions: Reads from repository variables
 - Orchestrator: Uses environment variable
 - Agent scripts: Uses environment variable
 
 **Example patterns:**
+
 - Default beads: `bd-[a-f0-9]{4,6}(?:\.\d+)?`
 - Custom agent: `agent-\w+(?:\.\d+)?`  
 - Custom task: `task-[a-z0-9]+(?:\.\d+)?`
@@ -1610,6 +1631,7 @@ This guide addresses three critical issues identified in initial review:
 **Problem:** CI pushing directly to `main` fails if branch is protected
 
 **Solution:** New commit step detects protection and auto-switches to metadata branch:
+
 ```yaml
 - name: Commit and push beads changes
   env:
@@ -1630,6 +1652,7 @@ This guide addresses three critical issues identified in initial review:
 **Problem:** Using `main` branch for install causes reproducibility issues
 
 **Solution:** Version now pinned via variable:
+
 ```yaml
 - name: Install beads
   env:
@@ -1738,6 +1761,7 @@ jobs:
 **Symptom:** Issues referenced in commits aren't being closed.
 
 **Solutions:**
+
 1. Verify issue IDs are in commit messages: `bd-a1b2` format
 2. Check the extraction script matched the IDs: view workflow logs
 3. Ensure `bd close` command succeeded: check for error output
@@ -1765,6 +1789,131 @@ echo ".beads/beads.jsonl merge=beads" >> .gitattributes
 bd sync        # Force sync
 bd import      # Re-import from JSONL if needed
 ```
+
+### Issue: "Import Requires SQLite Storage Backend" Error
+
+**Symptom:** `bd sync` and `bd doctor` fail with error: `Import failed: import requires SQLite storage backend`
+
+**Root Cause:** The `.beads/config.yaml` file has `no-db: true` but SQLite database files exist, creating a configuration conflict. The `import` command requires the SQLite backend to reconcile JSONL changes.
+
+**Solution:**
+
+1. **Enable SQLite backend** by updating `.beads/config.yaml`:
+
+   ```yaml
+   no-db: false
+   ```
+
+2. **If database is corrupted or locked**, reset and rebuild:
+
+   ```bash
+   # Backup first
+   cp -r .beads .beads_backup_$(date +%s)
+   
+   # Remove database files
+   rm -f .beads/beads.db*
+   
+   # Remove stale locks
+   rm -f .beads/.sync.lock .beads/daemon.lock
+   
+   # Ensure config is correct
+   echo "no-db: false" > .beads/config.yaml
+   
+   # Reimport from JSONL
+   bd sync --import-only
+   ```
+
+3. **Verify the fix:**
+
+   ```bash
+   bd doctor
+   bd list --limit 5  # Should show issues
+   ```
+
+**Prevention:** Don't manually switch between `no-db: true/false` modes once a database exists. Stick with one mode consistently.
+
+### Issue: "Invalid status: STATUS_NAME" Validation Error
+
+**Symptom:** `bd sync --import-only` or `bd import` fails with validation error: `invalid status: in_review` (or other custom status names)
+
+**Root Cause:** The JSONL file contains status values or label names that are not valid in the current Beads version. Valid statuses are: `open`, `in_progress`, `blocked`, `deferred`, `closed`, `suspended`. Custom values like `in_review` are invalid.
+
+**Common Sources:**
+
+- Older Beads versions that allowed custom statuses
+- Manual JSONL edits introducing invalid values
+- External tools writing to JSONL directly
+- Label names accidentally assigned to status fields
+
+**Solution:**
+
+1. **Identify invalid values:**
+
+   ```bash
+   # Check for invalid status in JSONL
+   grep -n "in_review" .beads/issues.jsonl
+   
+   # Count occurrences
+   grep -c "in_review" .beads/issues.jsonl
+   ```
+
+2. **Fix with Python script** (handles both status fields and labels):
+
+   ```bash
+   # Backup first
+   cp .beads/issues.jsonl .beads/issues.jsonl.bak
+   
+   # Fix invalid statuses and labels
+   python3 -c "
+   import json
+   
+   with open('.beads/issues.jsonl', 'r') as f:
+       lines = f.readlines()
+   
+   fixed_lines = []
+   for line in lines:
+       if line.strip():
+           issue = json.loads(line)
+           # Fix status field: map custom status to valid equivalent
+           if issue.get('status') == 'in_review':
+               issue['status'] = 'in_progress'
+           # Fix labels: remove invalid label names
+           if 'labels' in issue and 'in_review' in issue['labels']:
+               issue['labels'] = [l for l in issue['labels'] if l != 'in_review']
+           fixed_lines.append(json.dumps(issue))
+   
+   with open('.beads/issues.jsonl', 'w') as f:
+       f.write('\n'.join(fixed_lines) + '\n')
+   
+   print('Fixed invalid status values')
+   "
+   ```
+
+3. **Retry import:**
+
+   ```bash
+   bd sync --import-only --verbose
+   ```
+
+4. **Verify:**
+
+   ```bash
+   bd doctor
+   grep -c "in_review" .beads/issues.jsonl  # Should be 0
+   ```
+
+**Status Mapping Guide:**
+
+- `in_review` → `in_progress` (or `blocked` if waiting for approval)
+- `pending` → `open` or `in_progress`
+- `done` → `closed`
+- Custom values → Use the closest valid status
+
+**Prevention:**
+
+- Use `bd update <id> --status <valid-status>` instead of manual JSONL edits
+- Implement custom workflow states using labels, not status values
+- Validate JSONL before committing if using external tools
 
 ## Best Practices
 
@@ -1821,18 +1970,19 @@ A: Add deduplication logic that checks for existing open issues with the same ti
 
 ## Additional Resources
 
-- **Beads Documentation**: https://github.com/steveyegge/beads
+- **Beads Documentation**: <https://github.com/steveyegge/beads>
 - **Beads Quickstart**: `bd quickstart` (interactive tutorial)
-- **GitHub Actions Docs**: https://docs.github.com/actions
+- **GitHub Actions Docs**: <https://docs.github.com/actions>
 - **Issue Tracking Best Practices**: See `docs/LABELS.md` in beads repo
 
 ## Support
 
 For issues with this integration:
+
 1. Check workflow logs in GitHub Actions
 2. Verify beads installation: `bd info`
 3. Test locally: `bd create "test" && bd list`
-4. Review beads issues: https://github.com/steveyegge/beads/issues
+4. Review beads issues: <https://github.com/steveyegge/beads/issues>
 
 ---
 
@@ -1840,6 +1990,7 @@ For issues with this integration:
 **Last Updated:** 2025-02-14  
 
 **Changes in v2.1:**  
+
 - ✅ Safe deployment implementation order (6-step rollout)
 - ✅ Parallel run strategy for workflow validation
 - ✅ Python/pytest/ruff examples alongside Node.js
@@ -1847,6 +1998,7 @@ For issues with this integration:
 - ✅ Language-specific notes and comparison table
 
 **Changes in v2.0:**  
+
 - ✅ Configurable issue ID regex patterns  
 - ✅ Protected branch auto-detection and handling  
 - ✅ Pinned beads version for reproducibility  
