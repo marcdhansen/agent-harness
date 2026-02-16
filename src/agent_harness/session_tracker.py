@@ -1,4 +1,6 @@
 import json
+import os
+import sys
 import time
 from dataclasses import dataclass
 from functools import wraps
@@ -196,8 +198,10 @@ class SessionTracker:
 
         return patterns
 
-    def handle_session_start_violations(self, validation: ValidationResult):
-        """Handle violations at session start (interactive)"""
+    def handle_session_start_violations(
+        self, validation: ValidationResult, force_choice: str | None = None
+    ):
+        """Handle violations at session start (interactive or agent mode)"""
         print("\n⚠️  WARNING: Leftover artifacts from previous session")
         print("\nFound temporary files:")
         for v in validation.violations[:10]:
@@ -206,15 +210,35 @@ class SessionTracker:
         if len(validation.violations) > 10:
             print(f"  ... and {len(validation.violations) - 10} more")
 
-        print("\nOptions:")
-        print("1. Clean up now (recommended)")
-        print("2. Continue anyway (must clean before PR)")
-        print("3. Abort")
+        # Agent mode: check for env var or force_choice parameter
+        if force_choice is None:
+            force_choice = os.environ.get("HARNESS_SESSION_START_CHOICE")
 
-        try:
-            choice = input("\nEnter choice [1-3]: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            choice = "2"
+        is_agent = not sys.stdin.isatty() or force_choice is not None
+
+        if is_agent:
+            # Agent mode: auto-clean if forced, otherwise continue with warning
+            if force_choice == "1":
+                choice = "1"
+            elif force_choice == "3":
+                choice = "3"
+            else:
+                # Default for agents: continue anyway (must clean before PR)
+                print(
+                    "\n🤖 Agent mode detected: Continuing with violations (must clean before PR)\n"
+                )
+                self._log_override("session_start", validation.violations)
+                return
+        else:
+            print("\nOptions:")
+            print("1. Clean up now (recommended)")
+            print("2. Continue anyway (must clean before PR)")
+            print("3. Abort")
+
+            try:
+                choice = input("\nEnter choice [1-3]: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                choice = "2"
 
         if choice == "1":
             self._cleanup_violations(validation.violations)

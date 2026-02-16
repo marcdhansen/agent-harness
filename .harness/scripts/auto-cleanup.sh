@@ -4,9 +4,32 @@
 
 set -e
 
+# Parse arguments
+FORCE_MODE=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -y|--yes|--force)
+            FORCE_MODE=true
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [-y|--yes|--force]"
+            echo "  -y, --yes, --force  Skip confirmation prompt (for agents/CI)"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Check environment variable for agent mode
+if [ "${HARNESS_AUTO_CLEANUP:-}" = "true" ] || [ "${HARNESS_AUTO_CLEANUP:-}" = "1" ]; then
+    FORCE_MODE=true
+fi
+
 echo "🧹 Automatic Cleanup Utility"
-echo ""
-echo "⚠️  WARNING: This will DELETE files matching cleanup patterns!"
 echo ""
 
 # Dry run first
@@ -17,16 +40,31 @@ if [ $? -eq 0 ]; then
 fi
 
 # Show what will be deleted
+echo "⚠️  WARNING: This will DELETE files matching cleanup patterns!"
+echo ""
 echo "Files to be deleted:"
 bash .harness/scripts/validate-cleanup.sh 2>&1 | grep "^  -" || true
 echo ""
 
-read -p "Proceed with cleanup? [y/N]: " -n 1 -r
-echo
-
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Cleanup cancelled"
-    exit 1
+# Skip confirmation in agent/CI mode
+if [ "$FORCE_MODE" = false ] && [ -t 0 ]; then
+    read -p "Proceed with cleanup? [y/N]: " -n 1 -r
+    echo
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Cleanup cancelled"
+        exit 1
+    fi
+elif [ "$FORCE_MODE" = true ]; then
+    echo "🤖 Agent/CI mode: Proceeding with cleanup (--yes flag detected)"
+else
+    read -p "Proceed with cleanup? [y/N]: " -n 1 -r
+    echo
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Cleanup cancelled"
+        exit 1
+    fi
 fi
 
 # Load patterns and delete
