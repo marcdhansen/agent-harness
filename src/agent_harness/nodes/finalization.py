@@ -11,6 +11,7 @@ from agent_harness.compliance import (
     check_handoff_compliance,
     check_handoff_pr_link,
     check_handoff_pr_verification,
+    check_issue_closure_gate,
     check_no_separate_review_issues,
     check_plan_approval,
     check_pr_decomposition_closure,
@@ -53,6 +54,7 @@ def finalization_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_child_pr_linkage", check_child_pr_linkage)
     manager.register_validator("check_workspace_cleanup", check_workspace_cleanup)
     manager.register_validator("check_handoff_pr_verification", check_handoff_pr_verification)
+    manager.register_validator("check_issue_closure_gate", check_issue_closure_gate)
 
     # Run finalization phase
     passed, blockers, warnings = manager.run_phase("finalization")

@@ -1436,3 +1436,49 @@ def check_closed_issue_branches(*args) -> tuple[bool, str]:
         return True, "No stale issue branches detected"
     except Exception as e:
         return True, f"Stale branch check error: {e}"
+
+
+def check_issue_closure_gate(*args) -> tuple[bool, str]:
+    """Verify issue is 'in_review' or 'closed' if PR is still open."""
+    if not check_tool_available("bd"):
+        return True, "Beads CLI not available, closure check skipped"
+
+    issue_id = get_active_issue_id()
+    if not issue_id:
+        # If no issue ID, maybe we are running without an associated issue?
+        return True, "No active issue ID found, skipping closure gate"
+
+    try:
+        # Check actual status in beads
+        res = subprocess.run(
+            ["bd", "show", issue_id, "--json"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if res.returncode != 0:
+            return False, f"Could not retrieve issue details for {issue_id}"
+
+        try:
+            data = json.loads(res.stdout)
+            # Handle list or object response
+            issue_data = data[0] if isinstance(data, list) else data
+        except json.JSONDecodeError:
+            return False, f"Failed to parse issue details for {issue_id}"
+
+        status = issue_data.get("status")
+
+        # Acceptable statuses for finalization:
+        # - in_review: Dev work done, waiting for review/merge
+        # - closed: Merged/Closed
+        # Unacceptable: open, started, in_progress
+        if status in ["in_review", "closed"]:
+            return True, f"Issue {issue_id} has acceptable status '{status}'"
+
+        return (
+            False,
+            f"Issue {issue_id} has status '{status}'. Status must be 'in_review' or 'closed' for Finalization. Please update the issue status.",
+        )
+
+    except Exception as e:
+        return False, f"Error checking issue closure: {e}"
