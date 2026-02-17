@@ -34,3 +34,4 @@ debrief.md
 # Agent Harness - User-specific config (agent-6x9.6)
 .harness/config.json
 
+.beads/.migration-hint-ts
