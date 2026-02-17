@@ -835,3 +835,57 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 **Built with ❤️ for reliable AI agent orchestration**
+
+---
+
+## Session Cleanup Enforcement (agent-6x9.3)
+
+The agent harness enforces workspace cleanup at two checkpoints via `check_protocol_compliance.py`:
+
+**1. Session Start (Soft Enforcement)**
+```bash
+python check_protocol_compliance.py init --mode simple --issue agent-6x9
+```
+- Scans for leftover artifacts from previous sessions
+- If found: warns and offers cleanup options
+- Creates session lock
+
+**2. Session End (Hard Enforcement)**
+```bash
+python check_protocol_compliance.py close
+```
+- Validates workspace is clean
+- Blocks closure if violations exist
+- Removes session lock
+
+## Worktree Cleanup Validation (agent-6x9.4)
+
+Git worktrees are validated during workspace cleanup checks.
+
+#### Integration Points
+
+Worktree validation is integrated into:
+1. **Finalization checklist**
+2. **Manual cleanup** - `.harness/scripts/cleanup-worktrees.sh`
+
+#### GitWorktreeManager API
+```python
+from agent_harness import GitWorktreeManager
+
+manager = GitWorktreeManager()
+
+# Create isolated worktree
+wt_path = manager.create_worktree("agent-1")
+
+# Validate before removal
+violations = manager.validate_worktree_cleanup(wt_path)
+if violations:
+    print(f"Cleanup required: {violations}")
+
+# Remove with validation
+manager.remove_worktree("agent-1")  # Blocks if dirty
+```
+
+## 📜 License
+
+MIT License - see [LICENSE](LICENSE) for details.

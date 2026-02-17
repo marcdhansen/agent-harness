@@ -3,6 +3,7 @@
 
 set -e
 
+<<<<<<< HEAD
 # Parse arguments
 FORCE_MODE=false
 DRY_RUN=false
@@ -34,6 +35,8 @@ if [ "${HARNESS_WORKTREE_CLEANUP:-}" = "true" ] || [ "${HARNESS_WORKTREE_CLEANUP
     FORCE_MODE=true
 fi
 
+=======
+>>>>>>> 9fc08c0 (feat(agent-6x9.4): implement worktree cleanup validation)
 echo "🧹 Git Worktree Cleanup Utility"
 echo ""
 
@@ -97,6 +100,7 @@ for wt in "${ORPHANED[@]}"; do
 done
 echo ""
 
+<<<<<<< HEAD
 # Agent/CI mode: skip confirmation
 if [ "$DRY_RUN" = true ]; then
     echo "🔍 Dry-run mode: No worktrees would be removed"
@@ -106,11 +110,18 @@ if [ "$DRY_RUN" = true ]; then
     exit 0
 elif [ "$FORCE_MODE" = true ]; then
     echo "🤖 Agent/CI mode: Removing orphaned worktrees (--yes flag detected)"
+=======
+read -p "Remove these worktrees? [y/N]: " -n 1 -r
+echo
+
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+>>>>>>> 9fc08c0 (feat(agent-6x9.4): implement worktree cleanup validation)
     for wt in "${ORPHANED[@]}"; do
         echo "Removing: $wt"
         git worktree remove "$wt" --force 2>/dev/null || true
     done
     echo "✅ Cleanup complete"
+<<<<<<< HEAD
 elif [ -t 0 ]; then
     read -p "Remove these worktrees? [y/N]: " -n 1 -r
     echo
@@ -138,4 +149,8 @@ else
     else
         echo "Cleanup cancelled"
     fi
+=======
+else
+    echo "Cleanup cancelled"
+>>>>>>> 9fc08c0 (feat(agent-6x9.4): implement worktree cleanup validation)
 fi
