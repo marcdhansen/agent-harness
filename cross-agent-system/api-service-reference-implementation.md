@@ -1,3 +1,8 @@
+---
+status: approved
+implementation: partial
+dependencies: []
+---
 # Universal Agent API Service - Reference Implementation
 
 **Purpose**: Minimal API service to support sandboxed agents  

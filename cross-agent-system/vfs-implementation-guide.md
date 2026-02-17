@@ -1,3 +1,8 @@
+---
+status: approved
+implementation: partial
+dependencies: []
+---
 # Virtual File System (VFS) - Detailed Implementation Guide
 
 **Purpose**: Replace OS-level symlinks with a portable, testable Virtual File System  

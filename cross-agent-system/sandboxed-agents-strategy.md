@@ -1,3 +1,8 @@
+---
+status: approved
+implementation: partial
+dependencies: []
+---
 # Universal Agent System - Sandboxed Environment Strategy
 
 **Critical Issue**: Many agent environments are sandboxed with restricted file system access  
