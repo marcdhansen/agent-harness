@@ -9,7 +9,8 @@ class TestSOPGateCodeReview(unittest.TestCase):
         # Use mirrored orchestrator script relative to test file
         # This test is in tests/gatekeeper/
         self.orchestrator = (
-            Path(__file__).parents[2] / "tests/orchestrator_mirror/check_protocol_compliance.py"
+            Path(__file__).parents[2]
+            / "tests/orchestrator_mirror/check_protocol_compliance_mirror.py"
         )
         # code_review_script is not mirrored, so it will likely fail if used.
         # But test only runs orchestrator.

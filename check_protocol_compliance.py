@@ -25,17 +25,15 @@ Usage:
 """
 
 import argparse
-import os
-import sys
 import json
+import os
 import subprocess
+import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from agent_harness.compliance import get_active_issue_id
 from agent_harness.session_tracker import CleanupViolationError, SessionTracker
 
 
@@ -98,7 +96,7 @@ def save_to_config(values: dict):
         try:
             with open(config_file) as f:
                 existing = json.load(f)
-        except:
+        except Exception:
             pass
 
     existing.update(values)
@@ -108,14 +106,14 @@ def save_to_config(values: dict):
 
 
 def get_value(
-    arg_value: Optional[str],
+    arg_value: str | None,
     env_var: str,
     config_key: str,
     prompt: str,
-    default: Optional[str] = None,
+    default: str | None = None,
     required: bool = True,
-    choices: Optional[list] = None,
-) -> Optional[str]:
+    choices: list | None = None,
+) -> str | None:
     """
     Get value from multiple sources with priority:
     1. CLI argument (highest priority - explicit)
@@ -184,7 +182,7 @@ def get_value(
         print(f"  Env var:  {env_var}=<value>")
         print(f"  Config:   .harness/config.json (add '{config_key}: <value>')")
         if is_interactive():
-            print(f"  Prompt:   Run interactively and enter when prompted")
+            print("  Prompt:   Run interactively and enter when prompted")
         print()
         print("Example:")
         if choices:
@@ -370,13 +368,13 @@ def close_session(args):
                     timeout=5,
                     capture_output=True,
                 )
-            except:
+            except Exception:
                 pass
 
         return 0
 
     except CleanupViolationError as e:
-        print(f"❌ Cannot close session due to cleanup violations:")
+        print("❌ Cannot close session due to cleanup violations:")
         print(f"{e}")
         print()
         print("Options:")
@@ -495,7 +493,7 @@ For more details, see: .harness/USER_GUIDE.md
     )
     close_parser.add_argument("--no-update-beads", action="store_true", help="Do not update beads")
 
-    status_parser = subparsers.add_parser("status", help="Show session status")
+    subparsers.add_parser("status", help="Show session status")
 
     args = parser.parse_args()
 

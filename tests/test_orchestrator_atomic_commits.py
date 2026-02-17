@@ -9,7 +9,7 @@ import pytest
 orchestrator_path = Path(__file__).parent / "orchestrator_mirror"
 sys.path.insert(0, str(orchestrator_path))
 
-from check_protocol_compliance import validate_atomic_commits  # noqa: E402
+from check_protocol_compliance_mirror import validate_atomic_commits  # noqa: E402
 
 
 class TestAtomicCommitValidation:
@@ -82,8 +82,8 @@ class TestAtomicCommitValidation:
 
         mock_run.side_effect = side_effects
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_single_atomic_commit_passes(self, mock_run, mock_branch):
         """Test that a single atomic commit with valid format passes all checks."""
         mock_branch.return_value = ("agent-harness/test", True)
@@ -94,8 +94,8 @@ class TestAtomicCommitValidation:
         assert is_valid is True
         assert len(errors) == 0
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_multiple_commits_blocked(self, mock_run, mock_branch):
         """Test that multiple commits are detected and blocked."""
         mock_branch.return_value = ("agent-harness/test", True)
@@ -106,8 +106,8 @@ class TestAtomicCommitValidation:
         assert is_valid is False
         assert any("Multiple commits detected" in err for err in errors)
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_merge_commit_blocked(self, mock_run, mock_branch):
         """Test that merge commits are detected and blocked."""
         mock_branch.return_value = ("agent-harness/test", True)
@@ -126,8 +126,8 @@ class TestAtomicCommitValidation:
         assert "Merge commits" in all_errors
         assert "forbidden" in all_errors or "not allowed" in all_errors
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_missing_issue_id_blocked(self, mock_run, mock_branch):
         """Test that commits without Beads issue ID are blocked."""
         mock_branch.return_value = ("agent-harness/test", True)
@@ -138,8 +138,8 @@ class TestAtomicCommitValidation:
         assert is_valid is False
         assert any("must include Beads issue ID" in err for err in errors)
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_valid_commit_message_format(self, mock_run, mock_branch):
         """Test that valid conventional commit format is accepted."""
         mock_branch.return_value = ("agent-harness/test", True)
@@ -152,8 +152,8 @@ class TestAtomicCommitValidation:
         assert is_valid is True
         assert len(errors) == 0
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_invalid_commit_message_format(self, mock_run, mock_branch):
         """Test that invalid commit message format is rejected."""
         mock_branch.return_value = ("agent-harness/test", True)

@@ -111,7 +111,7 @@ def test_hil_flow(
         os.remove(db_path)
 
     print("--- FIRST RUN (Should hit interrupt) ---")
-    run_harness(process_id, "Testing Human-in-Loop", thread_id)
+    run_harness(process_id, "Testing Human-in-Loop", thread_id, db_path=db_path)
 
     # Check if interrupted
     checkpointer = get_sqlite_checkpointer(db_path)

@@ -14,7 +14,7 @@ orchestrator_path = Path(__file__).parents[2] / "tests/orchestrator_mirror"
 sys.path.insert(0, str(orchestrator_path))
 
 try:
-    import check_protocol_compliance as orchestrator
+    import check_protocol_compliance_mirror as orchestrator
 except ImportError:
     orchestrator = None
 
@@ -22,7 +22,7 @@ except ImportError:
 class TestGatePRMerge:
     """Tests for mandatory rebase-and-squash enforcement."""
 
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_merge_commit_blocked(self, mock_run):
         """Verify that merge commits are blocked."""
         if orchestrator is None:
@@ -42,7 +42,7 @@ class TestGatePRMerge:
         assert passed is False
         assert any("Merge commits not allowed" in err for err in errors)
 
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_multiple_commits_blocked(self, mock_run):
         """Verify that multiple commits are blocked (require squash)."""
         if orchestrator is None:
@@ -60,7 +60,7 @@ class TestGatePRMerge:
         assert passed is False
         assert any("Multiple commits detected" in err for err in errors)
 
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_atomic_commit_passes(self, mock_run):
         """Verify that a single atomic commit with issue ID passes."""
         if orchestrator is None:

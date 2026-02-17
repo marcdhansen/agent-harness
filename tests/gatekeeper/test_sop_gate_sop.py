@@ -14,7 +14,7 @@ orchestrator_path = Path(__file__).parents[2] / "tests/orchestrator_mirror"
 sys.path.insert(0, str(orchestrator_path))
 
 try:
-    import check_protocol_compliance as orchestrator
+    import check_protocol_compliance_mirror as orchestrator
 except ImportError:
     orchestrator = None
 

@@ -12,7 +12,7 @@ sys.path.insert(0, str(orchestrator_path))
 
 # Import the functions to test
 try:
-    import check_protocol_compliance as orchestrator
+    import check_protocol_compliance_mirror as orchestrator
 except ImportError:
     # If the file is not directly importable as a module, we might need to mock sys.path differently
     # or the script might not be structured for easy import.
@@ -79,13 +79,13 @@ class TestOrchestratorGitStatus(unittest.TestCase):
 class TestOrchestratorInitialization(unittest.TestCase):
     """Test the initialization checking functions."""
 
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("check_protocol_compliance.check_git_status")
-    @patch("check_protocol_compliance.check_rebase_status")
-    @patch("check_protocol_compliance.check_closed_issue_branches")
-    @patch("check_protocol_compliance.prune_local_branches")
-    @patch("check_protocol_compliance.check_sop_infrastructure_changes")
-    @patch("check_protocol_compliance.check_branch_issue_coupling")
+    @patch("check_protocol_compliance_mirror.check_tool_available")
+    @patch("check_protocol_compliance_mirror.check_git_status")
+    @patch("check_protocol_compliance_mirror.check_rebase_status")
+    @patch("check_protocol_compliance_mirror.check_closed_issue_branches")
+    @patch("check_protocol_compliance_mirror.prune_local_branches")
+    @patch("check_protocol_compliance_mirror.check_sop_infrastructure_changes")
+    @patch("check_protocol_compliance_mirror.check_branch_issue_coupling")
     def test_run_turbo_initialization_success(
         self, mock_coupling, mock_sop, mock_prune, mock_closed, mock_rebase, mock_git, mock_tool
     ):
@@ -102,13 +102,13 @@ class TestOrchestratorInitialization(unittest.TestCase):
             result = orchestrator.run_turbo_initialization()
         self.assertTrue(result)
 
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("check_protocol_compliance.check_git_status")
-    @patch("check_protocol_compliance.check_rebase_status")
-    @patch("check_protocol_compliance.check_closed_issue_branches")
-    @patch("check_protocol_compliance.prune_local_branches")
-    @patch("check_protocol_compliance.check_sop_infrastructure_changes")
-    @patch("check_protocol_compliance.check_branch_issue_coupling")
+    @patch("check_protocol_compliance_mirror.check_tool_available")
+    @patch("check_protocol_compliance_mirror.check_git_status")
+    @patch("check_protocol_compliance_mirror.check_rebase_status")
+    @patch("check_protocol_compliance_mirror.check_closed_issue_branches")
+    @patch("check_protocol_compliance_mirror.prune_local_branches")
+    @patch("check_protocol_compliance_mirror.check_sop_infrastructure_changes")
+    @patch("check_protocol_compliance_mirror.check_branch_issue_coupling")
     def test_run_turbo_initialization_blocked_by_code(
         self, mock_coupling, mock_sop, mock_prune, mock_closed, mock_rebase, mock_git, mock_tool
     ):
@@ -129,12 +129,12 @@ class TestOrchestratorInitialization(unittest.TestCase):
 class TestOrchestratorExecution(unittest.TestCase):
     """Test the run_execution function."""
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_beads_issue")
-    @patch("check_protocol_compliance.check_git_status")
-    @patch("check_protocol_compliance.check_plan_approval")
-    @patch("check_protocol_compliance.validate_tdd_compliance")
-    @patch("check_protocol_compliance.Path")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.check_beads_issue")
+    @patch("check_protocol_compliance_mirror.check_git_status")
+    @patch("check_protocol_compliance_mirror.check_plan_approval")
+    @patch("check_protocol_compliance_mirror.validate_tdd_compliance")
+    @patch("check_protocol_compliance_mirror.Path")
     def test_run_execution_success(
         self, mock_path, mock_tdd, mock_approval, mock_git, mock_beads, mock_branch
     ):
@@ -173,8 +173,8 @@ class TestOrchestratorExecution(unittest.TestCase):
             result = orchestrator.run_execution()
         self.assertTrue(result)
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_beads_issue")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.check_beads_issue")
     def test_run_execution_fails_on_main(self, mock_beads, mock_branch):
         """Test execution fails if on main branch."""
         mock_branch.return_value = ("main", False)
@@ -188,25 +188,25 @@ class TestOrchestratorExecution(unittest.TestCase):
 class TestOrchestratorFinalization(unittest.TestCase):
     """Test the run_finalization function."""
 
-    @patch("check_protocol_compliance.run_phase_from_json")
-    @patch("check_protocol_compliance.prune_local_branches")
-    @patch("check_protocol_compliance.check_git_status")
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_sop_simplification")
-    @patch("check_protocol_compliance.check_handoff_compliance")
-    @patch("check_protocol_compliance.validate_atomic_commits")
-    @patch("check_protocol_compliance.check_reflection_invoked")
-    @patch("check_protocol_compliance.check_linked_repositories")
-    @patch("check_protocol_compliance.check_code_review_status")
-    @patch("check_protocol_compliance.check_no_separate_review_issues")
-    @patch("check_protocol_compliance.check_todo_completion")
-    @patch("check_protocol_compliance.check_hook_integrity")
-    @patch("check_protocol_compliance.check_pr_exists")
-    @patch("check_protocol_compliance.check_pr_decomposition_closure")
-    @patch("check_protocol_compliance.check_child_pr_linkage")
-    @patch("check_protocol_compliance.check_handoff_pr_verification")
-    @patch("check_protocol_compliance.check_beads_pr_sync")
-    @patch("check_protocol_compliance.check_workspace_cleanup")
+    @patch("check_protocol_compliance_mirror.run_phase_from_json")
+    @patch("check_protocol_compliance_mirror.prune_local_branches")
+    @patch("check_protocol_compliance_mirror.check_git_status")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.check_sop_simplification")
+    @patch("check_protocol_compliance_mirror.check_handoff_compliance")
+    @patch("check_protocol_compliance_mirror.validate_atomic_commits")
+    @patch("check_protocol_compliance_mirror.check_reflection_invoked")
+    @patch("check_protocol_compliance_mirror.check_linked_repositories")
+    @patch("check_protocol_compliance_mirror.check_code_review_status")
+    @patch("check_protocol_compliance_mirror.check_no_separate_review_issues")
+    @patch("check_protocol_compliance_mirror.check_todo_completion")
+    @patch("check_protocol_compliance_mirror.check_hook_integrity")
+    @patch("check_protocol_compliance_mirror.check_pr_exists")
+    @patch("check_protocol_compliance_mirror.check_pr_decomposition_closure")
+    @patch("check_protocol_compliance_mirror.check_child_pr_linkage")
+    @patch("check_protocol_compliance_mirror.check_handoff_pr_verification")
+    @patch("check_protocol_compliance_mirror.check_beads_pr_sync")
+    @patch("check_protocol_compliance_mirror.check_workspace_cleanup")
     def test_run_finalization_success(
         self,
         mock_cleanup,
@@ -254,7 +254,7 @@ class TestOrchestratorFinalization(unittest.TestCase):
             result = orchestrator.run_finalization()
         self.assertTrue(result)
 
-    @patch("check_protocol_compliance.check_git_status")
+    @patch("check_protocol_compliance_mirror.check_git_status")
     def test_run_finalization_blocked_by_git(self, mock_git):
         """Test finalization blocked by uncommitted changes."""
         mock_git.return_value = (False, "Uncommitted changes: M file.py")
@@ -263,25 +263,25 @@ class TestOrchestratorFinalization(unittest.TestCase):
             result = orchestrator.run_finalization()
         self.assertFalse(result)
 
-    @patch("check_protocol_compliance.run_phase_from_json")
-    @patch("check_protocol_compliance.prune_local_branches")
-    @patch("check_protocol_compliance.check_git_status")
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_sop_simplification")
-    @patch("check_protocol_compliance.check_handoff_compliance")
-    @patch("check_protocol_compliance.validate_atomic_commits")
-    @patch("check_protocol_compliance.check_reflection_invoked")
-    @patch("check_protocol_compliance.check_linked_repositories")
-    @patch("check_protocol_compliance.check_code_review_status")
-    @patch("check_protocol_compliance.check_no_separate_review_issues")
-    @patch("check_protocol_compliance.check_todo_completion")
-    @patch("check_protocol_compliance.check_hook_integrity")
-    @patch("check_protocol_compliance.check_pr_exists")
-    @patch("check_protocol_compliance.check_pr_decomposition_closure")
-    @patch("check_protocol_compliance.check_child_pr_linkage")
-    @patch("check_protocol_compliance.check_handoff_pr_verification")
-    @patch("check_protocol_compliance.check_beads_pr_sync")
-    @patch("check_protocol_compliance.check_workspace_cleanup")
+    @patch("check_protocol_compliance_mirror.run_phase_from_json")
+    @patch("check_protocol_compliance_mirror.prune_local_branches")
+    @patch("check_protocol_compliance_mirror.check_git_status")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.check_sop_simplification")
+    @patch("check_protocol_compliance_mirror.check_handoff_compliance")
+    @patch("check_protocol_compliance_mirror.validate_atomic_commits")
+    @patch("check_protocol_compliance_mirror.check_reflection_invoked")
+    @patch("check_protocol_compliance_mirror.check_linked_repositories")
+    @patch("check_protocol_compliance_mirror.check_code_review_status")
+    @patch("check_protocol_compliance_mirror.check_no_separate_review_issues")
+    @patch("check_protocol_compliance_mirror.check_todo_completion")
+    @patch("check_protocol_compliance_mirror.check_hook_integrity")
+    @patch("check_protocol_compliance_mirror.check_pr_exists")
+    @patch("check_protocol_compliance_mirror.check_pr_decomposition_closure")
+    @patch("check_protocol_compliance_mirror.check_child_pr_linkage")
+    @patch("check_protocol_compliance_mirror.check_handoff_pr_verification")
+    @patch("check_protocol_compliance_mirror.check_beads_pr_sync")
+    @patch("check_protocol_compliance_mirror.check_workspace_cleanup")
     def test_run_finalization_blocked_by_stale_branches(
         self,
         mock_cleanup,
@@ -331,8 +331,8 @@ class TestOrchestratorFinalization(unittest.TestCase):
             result = orchestrator.run_finalization()
         self.assertFalse(result)
 
-    @patch("check_protocol_compliance.check_git_status")
-    @patch("check_protocol_compliance.check_reflection_invoked")
+    @patch("check_protocol_compliance_mirror.check_git_status")
+    @patch("check_protocol_compliance_mirror.check_reflection_invoked")
     def test_run_finalization_blocked_by_reflection(self, mock_reflect, mock_git):
         """Test finalization blocked by missing reflection."""
         mock_git.return_value = (True, "Working directory clean")
@@ -346,18 +346,18 @@ class TestOrchestratorFinalization(unittest.TestCase):
 class TestOrchestratorRetrospective(unittest.TestCase):
     """Test the run_retrospective function."""
 
-    @patch("check_protocol_compliance.run_phase_from_json")
-    @patch("check_protocol_compliance.check_reflection_invoked")
-    @patch("check_protocol_compliance.check_debriefing_invoked")
-    @patch("check_protocol_compliance.check_plan_approval")
-    @patch("check_protocol_compliance.check_progress_log_exists")
-    @patch("check_protocol_compliance.check_todo_completion")
-    @patch("check_protocol_compliance.check_handoff_pr_link")
-    @patch("check_protocol_compliance.check_handoff_beads_id")
-    @patch("check_protocol_compliance.check_wrapup_indicator_symmetry")
-    @patch("check_protocol_compliance.check_wrapup_exclusivity")
-    @patch("check_protocol_compliance.check_git_status")
-    @patch("check_protocol_compliance.inject_debrief_to_beads")
+    @patch("check_protocol_compliance_mirror.run_phase_from_json")
+    @patch("check_protocol_compliance_mirror.check_reflection_invoked")
+    @patch("check_protocol_compliance_mirror.check_debriefing_invoked")
+    @patch("check_protocol_compliance_mirror.check_plan_approval")
+    @patch("check_protocol_compliance_mirror.check_progress_log_exists")
+    @patch("check_protocol_compliance_mirror.check_todo_completion")
+    @patch("check_protocol_compliance_mirror.check_handoff_pr_link")
+    @patch("check_protocol_compliance_mirror.check_handoff_beads_id")
+    @patch("check_protocol_compliance_mirror.check_wrapup_indicator_symmetry")
+    @patch("check_protocol_compliance_mirror.check_wrapup_exclusivity")
+    @patch("check_protocol_compliance_mirror.check_git_status")
+    @patch("check_protocol_compliance_mirror.inject_debrief_to_beads")
     def test_run_retrospective_success(
         self,
         mock_inject,
@@ -386,7 +386,7 @@ class TestOrchestratorRetrospective(unittest.TestCase):
         mock_exclusivity.return_value = (True, "Exclusivity OK")
 
         # Mock reflector synthesis in log
-        with patch("check_protocol_compliance.Path.home") as mock_home:
+        with patch("check_protocol_compliance_mirror.Path.home") as mock_home:
             mock_log_file = MagicMock()
             mock_log_file.read_text.return_value = "## Reflector Synthesis\nSome content"
             # Path.home() / ".agent/progress-logs" / "test-id.md"
@@ -395,7 +395,7 @@ class TestOrchestratorRetrospective(unittest.TestCase):
             mock_home.return_value.__truediv__.return_value.__truediv__.return_value = mock_log_file
 
             # Mock get_active_issue_id to ensure it matches the path we mocked
-            with patch("check_protocol_compliance.get_active_issue_id") as mock_id:
+            with patch("check_protocol_compliance_mirror.get_active_issue_id") as mock_id:
                 mock_id.return_value = "test-id"
                 mock_git.return_value = (True, "Clean")
                 mock_json_phase.return_value = (False, [], [])
@@ -407,12 +407,12 @@ class TestOrchestratorRetrospective(unittest.TestCase):
 class TestOrchestratorCleanState(unittest.TestCase):
     """Test the run_clean_state function."""
 
-    @patch("check_protocol_compliance.check_branch_info")
-    @patch("check_protocol_compliance.check_git_status")
-    @patch("check_protocol_compliance.Path")
+    @patch("check_protocol_compliance_mirror.check_branch_info")
+    @patch("check_protocol_compliance_mirror.check_git_status")
+    @patch("check_protocol_compliance_mirror.Path")
     @patch("subprocess.run")
-    @patch("check_protocol_compliance.prune_local_branches")
-    @patch("check_protocol_compliance.check_workspace_cleanup")
+    @patch("check_protocol_compliance_mirror.prune_local_branches")
+    @patch("check_protocol_compliance_mirror.check_workspace_cleanup")
     def test_run_clean_state_success(
         self, mock_cleanup, mock_prune, mock_run, mock_path, mock_git, mock_branch
     ):
@@ -430,9 +430,9 @@ class TestOrchestratorCleanState(unittest.TestCase):
 
     def test_run_clean_state_fails_on_feature_branch(self):
         """Test clean state fails if still on feature branch."""
-        with patch("check_protocol_compliance.check_branch_info") as mock_branch:
+        with patch("check_protocol_compliance_mirror.check_branch_info") as mock_branch:
             mock_branch.return_value = ("agent-harness/test", True)
-            with patch("check_protocol_compliance.check_git_status") as mock_git:
+            with patch("check_protocol_compliance_mirror.check_git_status") as mock_git:
                 mock_git.return_value = (True, "Clean")
                 with patch("subprocess.run") as mock_run:
                     mock_run.return_value.stdout = "Up to date"
@@ -545,7 +545,7 @@ class TestOrchestratorPRChecks(unittest.TestCase):
         self.assertFalse(passed)
         self.assertIn("No PR found", msg)
 
-    @patch("check_protocol_compliance.Path.home")
+    @patch("check_protocol_compliance_mirror.Path.home")
     def test_check_handoff_pr_link_success(self, mock_home):
         """Test PR link found in debrief."""
         mock_session = MagicMock()

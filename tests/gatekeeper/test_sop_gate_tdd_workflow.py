@@ -14,7 +14,7 @@ orchestrator_path = Path(__file__).parents[2] / "tests/orchestrator_mirror"
 sys.path.insert(0, str(orchestrator_path))
 
 try:
-    import check_protocol_compliance as orchestrator
+    import check_protocol_compliance_mirror as orchestrator
 except ImportError:
     orchestrator = None
 
@@ -22,8 +22,8 @@ except ImportError:
 class TestGateTDDPresence:
     """Tests for mandatory TDD presence before implementation."""
 
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_tool_available")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_code_without_tests_blocked(self, mock_run, mock_tool):
         """Verify that code changes without corresponding test changes are blocked."""
         if orchestrator is None:
@@ -52,8 +52,8 @@ class TestGateTDDPresence:
             # If function doesn't exist, the test should fail to prompt implementation (Red Phase)
             pytest.fail("validate_tdd_compliance function missing in Orchestrator")
 
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_tool_available")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_tests_without_code_passes(self, mock_run, mock_tool):
         """Verify that test stubs without implementation code pass (Red Phase)."""
         if orchestrator is None:
@@ -79,8 +79,8 @@ class TestGateTDDPresence:
         else:
             pytest.fail("validate_tdd_compliance function missing in Orchestrator")
 
-    @patch("check_protocol_compliance.check_tool_available")
-    @patch("check_protocol_compliance.subprocess.run")
+    @patch("check_protocol_compliance_mirror.check_tool_available")
+    @patch("check_protocol_compliance_mirror.subprocess.run")
     def test_balanced_changes_passes(self, mock_run, mock_tool):
         """Verify that balanced code and test changes pass."""
         if orchestrator is None:
