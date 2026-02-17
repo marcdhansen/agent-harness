@@ -53,11 +53,40 @@ jobs:
 
       - name: Run tests (Pytest)
         # BLOCKS
-        run: uv run pytest tests/
+        run: |
+          uv run pytest tests/ -v --tb=short 2>&1 | tee pytest-output.txt
+          echo "::group::Pytest Summary"
+          cat pytest-output.txt | tail -20
+          echo "::endgroup::"
+
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-output
+          path: pytest-output.txt
+
+      - name: Show Python environment
+        run: |
+          echo "Python version: $(python --version)"
+          echo "UV version: $(uv --version)"
+          echo "Installed packages:"
+          uv pip list | head -20
 
       - name: Security scan (Bandit)
         # BLOCKS
-        run: uv run bandit -r src/ -ll
+        run: |
+          uv run bandit -r src/ -ll 2>&1 | tee bandit-output.txt
+          echo "::group::Bandit Summary"
+          cat bandit-output.txt | tail -10
+          echo "::endgroup::"
+
+      - name: Upload bandit logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-output
+          path: bandit-output.txt
 
   beads-sync:
     name: Sync Beads (Non-blocking)
