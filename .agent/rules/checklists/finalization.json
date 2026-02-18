@@ -119,6 +119,12 @@
                     "description": "Verify related issues are linked in issue comments (optional)",
                     "type": "WARNING",
                     "validator": "check_related_issues_linked"
+                },
+                {
+                    "id": "readme_needs_update",
+                    "description": "Verify README is updated if session changes warrant documentation",
+                    "type": "BLOCKER",
+                    "validator": "check_readme_needs_update"
                 }
             ]
         }

@@ -18,6 +18,7 @@ from agent_harness.compliance import (
     check_pr_exists,
     check_progress_log_exists,
     check_protocol_compliance_reporting,
+    check_readme_needs_update,
     check_reflection_invoked,
     check_todo_completion,
     check_workspace_cleanup,
@@ -55,6 +56,7 @@ def finalization_node(state: ProtocolState) -> ProtocolState:
     manager.register_validator("check_workspace_cleanup", check_workspace_cleanup)
     manager.register_validator("check_handoff_pr_verification", check_handoff_pr_verification)
     manager.register_validator("check_issue_closure_gate", check_issue_closure_gate)
+    manager.register_validator("check_readme_needs_update", check_readme_needs_update)
 
     # Run finalization phase
     passed, blockers, warnings = manager.run_phase("finalization")

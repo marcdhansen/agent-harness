@@ -1246,6 +1246,107 @@ def check_related_issues_linked(*args) -> tuple[bool, str]:
         return True, "Could not check related issues"
 
 
+README_TRIGGER_PATTERNS = {
+    "installation": [
+        r"^requirements\.txt$",
+        r"^setup\.py$",
+        r"^pyproject\.toml$",
+        r"^setup\.cfg$",
+        r"^Makefile$",
+        r"^Dockerfile$",
+        r"^docker-compose\.ya?ml$",
+        r"^\.env\.example$",
+        r"^install",
+    ],
+    "usage": [
+        r"^examples/",
+        r"^docs/usage",
+        r"^docs/getting-started",
+        r"^docs/quickstart",
+    ],
+    "configuration": [
+        r"^config/",
+        r"^\.env",
+        r"^settings/",
+        r"^config.*\.py$",
+        r"\.yaml$",
+        r"\.yml$",
+        r"\.toml$",
+    ],
+    "api": [
+        r"^api/",
+        r"^docs/api",
+        r"openapi\.json$",
+        r"swagger\.ya?ml$",
+    ],
+    "dependencies": [
+        r"requirements\.txt$",
+        r"pyproject\.toml$",
+        r"package\.json$",
+        r"Cargo\.toml$",
+        r"go\.mod$",
+    ],
+    "architecture": [
+        r"^docs/architecture",
+        r"ARCHITECTURE\.md$",
+        r"DIAGRAMS/",
+    ],
+}
+
+
+def check_readme_needs_update(*args) -> tuple[bool, str]:
+    """Check if session changes warrant README update.
+
+    This validator examines git diff to detect changes that would
+    require README documentation updates. It returns BLOCKER if
+    README-worthy changes are detected.
+    """
+    project_root = Path.cwd()
+    readme_path = project_root / "README.md"
+
+    if not readme_path.exists():
+        return True, "No README.md found in project root"
+
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
+            capture_output=True,
+            text=True,
+            cwd=project_root,
+            timeout=10,
+        )
+
+        if result.returncode != 0:
+            return True, "Could not get git diff, skipping README check"
+
+        changed_files = [f.strip() for f in result.stdout.strip().split("\n") if f.strip()]
+
+        if not changed_files:
+            return True, "No files changed in last commit"
+
+        triggered_categories = set()
+        for file_path in changed_files:
+            for category, patterns in README_TRIGGER_PATTERNS.items():
+                for pattern in patterns:
+                    if re.match(pattern, file_path):
+                        triggered_categories.add(category)
+                        break
+
+        if triggered_categories:
+            categories_str = ", ".join(sorted(triggered_categories))
+            return False, (
+                f"README update required: changes detected in {categories_str}. "
+                f"Files: {', '.join(changed_files[:5])}"
+            )
+
+        return True, "No README-worthy changes detected"
+
+    except subprocess.TimeoutExpired:
+        return True, "Timeout checking git diff, skipping README check"
+    except Exception as e:
+        return True, f"Error checking README requirements: {e}"
+
+
 def check_handoff_compliance(*args) -> tuple[bool, str]:
     """Check if hand-off compliance verification passes for multi-phase implementations."""
     handoff_dir = Path(".agent/handoffs")
