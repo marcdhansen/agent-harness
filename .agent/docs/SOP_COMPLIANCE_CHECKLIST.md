@@ -66,3 +66,9 @@ Final verification: repo should be clean after PR merge.
 - [ ] **Verify working tree is clean** (Validator: `check_git_status`)
 - [ ] **Verify up to date with remote** (Validator: `check_git_status`)
 - [ ] **Verify temporary artifacts removed (task.md, debrief.md, etc.)** (Validator: `check_workspace_integrity`)
+
+---
+
+## Reference Documents
+
+- [.agent/rules/coding-principles.md](./rules/coding-principles.md) - Core coding principles (Prevent/Detect/Correct, Fail Loudly, Treat Cause Not Symptom)
