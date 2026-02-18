@@ -1085,6 +1085,167 @@ def check_workspace_cleanup(*args) -> tuple[bool, str]:
     return True, "Workspace clean of temporary artifact drift and worktrees validated"
 
 
+def check_fix_details_documented(*args) -> tuple[bool, str]:
+    """Verify fix details are documented in issue comments.
+
+    This ensures PR reviewers have context about what was fixed.
+    Checks for keywords indicating code changes, config updates, or commit references.
+    """
+    issue_id = get_active_issue_id()
+    if not issue_id:
+        return False, "No active issue ID found. Cannot verify closure details."
+
+    try:
+        result = subprocess.run(
+            ["bd", "comments", issue_id, "--json"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return False, f"Failed to get comments: {result.stderr}"
+
+        import json
+
+        try:
+            comments = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return False, "Failed to parse comments JSON"
+
+        all_text = " ".join(c.get("text", "").lower() for c in comments)
+
+        fix_keywords = [
+            "fix:",
+            "change:",
+            "modified:",
+            "updated:",
+            "commit:",
+            "changed:",
+            "pr:",
+            "changes:",
+        ]
+        if any(kw in all_text for kw in fix_keywords):
+            return True, f"Fix details found in issue {issue_id} comments"
+
+        return False, (
+            f"No fix details found in issue {issue_id} comments. "
+            "Before closing, add comment with: "
+            "- What fixes were applied "
+            "- Specific code changes or config updates "
+            "- Commit or PR reference "
+            'Run: bd comments add <id> "Fix: ..."'
+        )
+    except subprocess.TimeoutExpired:
+        return False, "Timeout checking issue comments"
+    except Exception as e:
+        return False, f"Error checking fix details: {e}"
+
+
+def check_verification_tests_listed(*args) -> tuple[bool, str]:
+    """Verify tests used for verification are documented in issue comments.
+
+    This ensures PR reviewers know how the fix was verified.
+    Checks for keywords indicating test names, verification steps, or test results.
+    """
+    issue_id = get_active_issue_id()
+    if not issue_id:
+        return False, "No active issue ID found. Cannot verify closure details."
+
+    try:
+        result = subprocess.run(
+            ["bd", "comments", issue_id, "--json"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return False, f"Failed to get comments: {result.stderr}"
+
+        import json
+
+        try:
+            comments = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return False, "Failed to parse comments JSON"
+
+        all_text = " ".join(c.get("text", "").lower() for c in comments)
+
+        test_keywords = [
+            "test:",
+            "verified:",
+            "pytest",
+            "pass:",
+            "coverage",
+            "tested:",
+            "verification:",
+            "tests:",
+            "passed:",
+        ]
+        if any(kw in all_text for kw in test_keywords):
+            return True, f"Verification tests found in issue {issue_id} comments"
+
+        return False, (
+            f"No verification details found in issue {issue_id} comments. "
+            "Before closing, add comment with: "
+            "- What tests were used to verify the fix "
+            "- Test names or locations "
+            "- Manual testing performed (if any) "
+            'Run: bd comments add <id> "Test: ..."'
+        )
+    except subprocess.TimeoutExpired:
+        return False, "Timeout checking issue comments"
+    except Exception as e:
+        return False, f"Error checking verification details: {e}"
+
+
+def check_related_issues_linked(*args) -> tuple[bool, str]:
+    """Verify related issues are linked in issue comments.
+
+    This is optional but recommended for context.
+    Checks for references to other issue IDs.
+    """
+    issue_id = get_active_issue_id()
+    if not issue_id:
+        return True, "No active issue ID found. Skipping related issues check."
+
+    try:
+        result = subprocess.run(
+            ["bd", "comments", issue_id, "--json"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return True, "Could not get comments, skipping related issues check"
+
+        import json
+
+        try:
+            comments = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return True, "Could not parse comments, skipping related issues check"
+
+        all_text = " ".join(c.get("text", "") for c in comments)
+
+        import re
+
+        issue_refs = re.findall(r"(?:agent-|bd-)[a-z0-9]+(?:\.\d+)?", all_text, re.IGNORECASE)
+        issue_refs = [ref.lower() for ref in issue_refs]
+
+        if issue_id.lower() in issue_refs:
+            issue_refs.remove(issue_id.lower())
+
+        if issue_refs:
+            unique_refs = list(set(issue_refs))
+            return True, f"Related issues found: {', '.join(unique_refs)}"
+
+        return True, "No related issues linked (optional - warning only)"
+    except subprocess.TimeoutExpired:
+        return True, "Timeout checking related issues"
+    except Exception:
+        return True, "Could not check related issues"
+
+
 def check_handoff_compliance(*args) -> tuple[bool, str]:
     """Check if hand-off compliance verification passes for multi-phase implementations."""
     handoff_dir = Path(".agent/handoffs")

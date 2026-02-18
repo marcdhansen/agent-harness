@@ -101,6 +101,24 @@
                     "description": "Verify active harness session",
                     "type": "BLOCKER",
                     "validator": "check_harness_session"
+                },
+                {
+                    "id": "fix_details_documented",
+                    "description": "Verify fix details (code changes, config updates) documented in issue comments",
+                    "type": "BLOCKER",
+                    "validator": "check_fix_details_documented"
+                },
+                {
+                    "id": "verification_tests_listed",
+                    "description": "Verify tests used for verification are documented in issue comments",
+                    "type": "BLOCKER",
+                    "validator": "check_verification_tests_listed"
+                },
+                {
+                    "id": "related_issues_linked",
+                    "description": "Verify related issues are linked in issue comments (optional)",
+                    "type": "WARNING",
+                    "validator": "check_related_issues_linked"
                 }
             ]
         }
