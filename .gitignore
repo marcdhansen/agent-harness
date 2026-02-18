@@ -35,3 +35,4 @@ debrief.md
 .harness/config.json
 
 .beads/.migration-hint-ts
+.agent/.briefing_cache/
