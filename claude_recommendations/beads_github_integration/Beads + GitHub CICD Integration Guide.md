@@ -78,7 +78,7 @@ See "Critical Configuration" section below for detailed instructions.
 **Comparison checklist:**
 
 ```bash
-# scripts/compare-workflows.sh
+# shell_scripts/compare-workflows.sh
 #!/bin/bash
 
 echo "Comparing old vs new workflow results..."

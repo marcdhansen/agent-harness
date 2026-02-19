@@ -11,6 +11,7 @@
                     "description": "Verify 'bd' tool version",
                     "type": "BLOCKER",
                     "validator": "check_tool_version",
+                    "modes": ["full"],
                     "args": [
                         "bd",
                         "0.1.0"
@@ -21,6 +22,7 @@
                     "description": "Verify 'git' tool version",
                     "type": "BLOCKER",
                     "validator": "check_tool_version",
+                    "modes": ["full", "turbo"],
                     "args": [
                         "git",
                         "2.0.0"
@@ -30,70 +32,88 @@
                     "id": "workspace_integrity",
                     "description": "Verify mandatory directories (.git, .agent, .beads)",
                     "type": "BLOCKER",
-                    "validator": "check_workspace_integrity"
+                    "validator": "check_workspace_integrity",
+                    "modes": ["full", "turbo"]
                 },
                 {
                     "id": "rebase_status",
                     "description": "Verify no hanging rebase or merge",
                     "type": "BLOCKER",
-                    "validator": "check_rebase_status"
+                    "validator": "check_rebase_status",
+                    "modes": ["full", "turbo"]
                 },
                 {
                     "id": "stale_branches",
                     "description": "Verify no stale or merged branches",
                     "type": "WARNING",
-                    "validator": "check_closed_issue_branches"
+                    "validator": "check_closed_issue_branches",
+                    "modes": ["full", "turbo"]
                 },
                 {
                     "id": "planning_docs",
                     "description": "Verify planning documents exist (ROADMAP.md, ImplementationPlan.md)",
                     "type": "BLOCKER",
-                    "validator": "check_planning_docs"
+                    "validator": "check_planning_docs",
+                    "modes": ["full"]
                 },
                 {
                     "id": "beads_issue",
                     "description": "Verify active Beads issue exists",
                     "type": "BLOCKER",
-                    "validator": "check_beads_issue"
+                    "validator": "check_beads_issue",
+                    "modes": ["full"]
                 },
                 {
                     "id": "branch_issue_coupling",
                     "description": "Verify branch ID matches 'started' Beads issue",
                     "type": "BLOCKER",
-                    "validator": "check_branch_issue_coupling"
+                    "validator": "check_branch_issue_coupling",
+                    "modes": ["full", "turbo"]
                 },
                 {
                     "id": "sop_simplification",
                     "description": "Verify SOP simplification check",
                     "type": "WARNING",
-                    "validator": "check_sop_simplification"
+                    "validator": "check_sop_simplification",
+                    "modes": ["full"]
                 },
                 {
                     "id": "harness_session",
                     "description": "Verify active harness session exists",
                     "type": "BLOCKER",
-                    "validator": "check_harness_session"
+                    "validator": "check_harness_session",
+                    "modes": ["full"]
                 },
                 {
                     "id": "hook_integrity",
                     "description": "Verify git hook integrity",
                     "type": "BLOCKER",
-                    "validator": "check_hook_integrity"
+                    "validator": "check_hook_integrity",
+                    "modes": ["full"]
                 },
                 {
                     "id": "progress_log",
                     "description": "Verify progress log exists",
                     "type": "WARNING",
-                    "validator": "check_progress_log_exists"
+                    "validator": "check_progress_log_exists",
+                    "modes": ["full"]
                 },
                 {
                     "id": "plan_approval",
                     "description": "Verify plan approval is fresh (<4h)",
                     "type": "BLOCKER",
                     "validator": "check_plan_approval",
+                    "modes": ["full"],
                     "args": [
                         "4"
                     ]
+                },
+                {
+                    "id": "show_next_task_skill",
+                    "description": "Verify show-next-task skill was used for task discovery",
+                    "type": "MANUAL",
+                    "validator": "check_show_next_task_used",
+                    "modes": ["full", "turbo"]
                 }
             ]
         }

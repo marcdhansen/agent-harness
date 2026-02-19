@@ -106,7 +106,7 @@ The `BEADS_GITHUB_INTEGRATION.md` guide has been updated to **version 2.1** with
 
 ### Comparison Script
 ```bash
-# scripts/compare-workflows.sh
+# shell_scripts/compare-workflows.sh
 gh run list --workflow=linting.yaml --limit=10
 gh run list --workflow=pr-ci.yml --limit=10
 # Manual checklist for validation

@@ -651,7 +651,7 @@ bd state agent-xyz in_progress
 
 ```bash
 # Run local CI simulation
-./scripts/ci-local.sh
+./shell_scripts/ci-local.sh
 
 # This runs:
 # - Ruff linting
@@ -832,7 +832,7 @@ uv run pytest --cov=src/agent_harness tests/
 ### Run Local CI
 
 ```bash
-./scripts/ci-local.sh
+./shell_scripts/ci-local.sh
 ```
 
 ## Contributing
@@ -842,7 +842,7 @@ Contributions welcome! Please:
 1. Create a Beads issue: `bd create "Your feature"`
 2. Create a branch: `git checkout -b task/ISSUE_ID-description`
 3. Make changes and add tests
-4. Run local CI: `./scripts/ci-local.sh`
+4. Run local CI: `./shell_scripts/ci-local.sh`
 5. Create PR with Beads ID in title/body
 
 ## License

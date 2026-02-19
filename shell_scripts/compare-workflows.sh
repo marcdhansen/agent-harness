@@ -1,5 +1,5 @@
 #!/bin/bash
-# scripts/compare-workflows.sh
+# shell_scripts/compare-workflows.sh
 # Validates old vs new workflow equivalence during parallel run.
 
 set -e
