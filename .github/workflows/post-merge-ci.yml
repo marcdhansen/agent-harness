@@ -43,10 +43,10 @@ jobs:
       - name: Sync Beads
         id: sync
         run: |
-          # Use no-db mode since config.yaml has no-db: true
+          # Config uses SQLite backend (no-db: false)
           export PATH="$HOME/.local/bin:$PATH"
           git fetch origin beads-metadata || true
-          bd sync || echo "Initial sync failed, will attempt to close anyway"
+          bd sync || { echo "::warning::Beads sync failed - will attempt close anyway"; }
         continue-on-error: true
 
       - name: Run Safety Net Tests
@@ -170,11 +170,28 @@ jobs:
           ISSUES='${{ steps.extract_issues.outputs.result }}'
           
           if [ "$ISSUES" != "[]" ]; then
+            echo "Found issues to close: $ISSUES"
             echo "$ISSUES" | jq -r '.[]' | while read -r issue_id; do
-              echo "Closing linked issue: $issue_id"
-              bd close "$issue_id" --reason "✅ CI/CD passed successfully [skip ci]" || true
+              echo "Attempting to close issue: $issue_id"
+              
+              # Check if beads database exists
+              if [ ! -d ".beads" ] || [ ! -f ".beads/beads.db" ]; then
+                echo "::warning::No beads database found. Cannot close issue $issue_id."
+                echo "::warning::Issue $issue_id needs manual closure."
+                continue
+              fi
+              
+              # Try to close the issue
+              if bd close "$issue_id" --reason "✅ CI/CD passed successfully [skip ci]"; then
+                echo "Successfully closed issue: $issue_id"
+              else
+                echo "::warning::Failed to close issue $issue_id"
+                echo "::warning::Issue $issue_id may need manual closure"
+              fi
             done
-            bd sync || true
+            bd sync || echo "::warning::Final sync failed"
+          else
+            echo "No issues found in commit messages to close"
           fi
 
       - name: Commit and push beads updates
