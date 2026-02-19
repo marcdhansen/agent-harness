@@ -47,8 +47,10 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           git fetch origin beads-metadata || true
           
-          # Use --no-db mode in CI as beads-metadata only has JSONL
-          if bd --no-db sync; then
+          # Ensure no-db mode is set for CI (beads-metadata only has JSONL)
+          echo "no-db: true" > .beads/config.yaml
+          
+          if bd sync; then
             echo "Beads sync successful (JSONL mode)"
           else
             echo "::warning::Beads sync failed"
