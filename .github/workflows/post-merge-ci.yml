@@ -31,14 +31,14 @@ jobs:
 
       - name: Install Beads
         run: |
-          # Pin to v0.50.3 which supports JSONL-only mode (v0.52.0 requires Dolt with CGO)
-          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v0.50.3/scripts/install.sh | bash
-          # Ensure bd is in path
-          if [ -f "/usr/local/bin/bd" ]; then
-            echo "/usr/local/bin" >> $GITHUB_PATH
-          elif [ -f "$HOME/.local/bin/bd" ]; then
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-          fi
+          # Download v0.50.3 directly (newer versions require Dolt which needs CGO)
+          curl -sL https://github.com/steveyegge/beads/releases/download/v0.50.3/beads_0.50.3_linux_amd64.tar.gz -o /tmp/beads.tar.gz
+          tar -xzf /tmp/beads.tar.gz -C /tmp
+          chmod +x /tmp/beads_0.50.3_linux_amd64/beads
+          mkdir -p "$HOME/.local/bin"
+          mv /tmp/beads_0.50.3_linux_amd64/beads "$HOME/.local/bin/bd"
+          rm -rf /tmp/beads*
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           bd version
 
       - name: Sync Beads
