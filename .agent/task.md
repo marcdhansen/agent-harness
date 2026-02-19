@@ -12,11 +12,12 @@ Fix the gap where CI/CD fails to close beads issues on PR merge due to missing d
 
 ## Solution: Hybrid Fix
 
-### Part 1: CI Workflow Fix
+### Part 1: CI Workflow Fix (COMPLETED)
 - Updated `.github/workflows/post-merge-ci.yml`:
-  - Pinned beads to v0.50.3 (supports JSONL mode)
-  - Added proper error handling and logging
-  - CI now attempts to close issues with clear warnings on failure
+  - Added `BD_ISSUE_PREFIX` env var to both sync and close steps
+  - Removed faulty database check (lines 191-195) that always failed in --no-db mode
+  - Added `--no-db` flag to `bd close` command
+  - Added `--no-db` flag to final `bd sync` command
 
 ### Part 2: SOP Updates
 - `SOP_COMPLIANCE_CHECKLIST.md`: Changed "optional" to MANDATORY verification
@@ -26,10 +27,11 @@ Fix the gap where CI/CD fails to close beads issues on PR merge due to missing d
 
 ## Verification
 
-- ✅ CI executes close command successfully
-- ✅ CI logs warnings when closure fails
+- ✅ CI executes close command with --no-db flag
+- ✅ CI sets BD_ISSUE_PREFIX env var for JSONL-only mode
+- ✅ Removed faulty database check that prevented closing
 - ✅ SOP requires manual verification (addresses beads limitations)
-- ✅ Test issue agent-pkb closed manually
+- ✅ Test: Verified bd --no-db close works with BD_ISSUE_PREFIX
 
 ## Todos
 

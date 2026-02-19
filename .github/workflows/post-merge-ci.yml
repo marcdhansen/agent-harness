@@ -49,9 +49,12 @@ jobs:
 
       - name: Sync Beads
         id: sync
+        env:
+          BD_ISSUE_PREFIX: ${{ vars.BD_ISSUE_PREFIX || 'agent' }}
         run: |
           # CI uses JSONL-only mode (beads v0.50.3)
           export PATH="$HOME/.local/bin:$PATH"
+          export BD_ISSUE_PREFIX="$BD_ISSUE_PREFIX"
           git fetch origin beads-metadata || true
           
           # Use --no-db mode since beads-metadata only has JSONL files
@@ -178,8 +181,11 @@ jobs:
 
       - name: Close issues on success
         if: steps.tests.outcome == 'success' && steps.security.outcome == 'success'
+        env:
+          BD_ISSUE_PREFIX: ${{ vars.BD_ISSUE_PREFIX || 'agent' }}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
+          export BD_ISSUE_PREFIX="$BD_ISSUE_PREFIX"
           ISSUES='${{ steps.extract_issues.outputs.result }}'
           
           if [ "$ISSUES" != "[]" ]; then
@@ -187,22 +193,15 @@ jobs:
             echo "$ISSUES" | jq -r '.[]' | while read -r issue_id; do
               echo "Attempting to close issue: $issue_id"
               
-              # Check if beads database exists
-              if [ ! -d ".beads" ] || [ ! -f ".beads/beads.db" ]; then
-                echo "::warning::No beads database found. Cannot close issue $issue_id."
-                echo "::warning::Issue $issue_id needs manual closure."
-                continue
-              fi
-              
-              # Try to close the issue
-              if bd close "$issue_id" --reason "✅ CI/CD passed successfully [skip ci]"; then
+              # Try to close the issue using JSONL-only mode (no database required)
+              if bd --no-db close "$issue_id" --reason "✅ CI/CD passed successfully [skip ci]"; then
                 echo "Successfully closed issue: $issue_id"
               else
                 echo "::warning::Failed to close issue $issue_id"
                 echo "::warning::Issue $issue_id may need manual closure"
               fi
             done
-            bd sync || echo "::warning::Final sync failed"
+            bd --no-db sync || echo "::warning::Final sync failed"
           else
             echo "No issues found in commit messages to close"
           fi

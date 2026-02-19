@@ -36,3 +36,4 @@ debrief.md
 
 .beads/.migration-hint-ts
 .agent/.briefing_cache/
+.session_friction_*.md
