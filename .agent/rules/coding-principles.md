@@ -15,9 +15,9 @@ A three-layered approach to managing code quality and bugs.
 
 ### Detect
 
-- Write comprehensive tests (unit, integration, e2e)
+- Write comprehensive tests (unit, integration, e2e) - see [MAINTENANCE.md](./MAINTENANCE.md) for coverage targets
 - Run linters and formatters automatically
-- Enable type checking (mypy/pyright)
+- Enable type checking (mypy/pyright) - see [MAINTENANCE.md](./MAINTENANCE.md) for configuration
 - Use code coverage tools to identify untested code
 
 ### Correct
