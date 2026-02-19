@@ -34,9 +34,9 @@ jobs:
           # Download v0.50.3 directly (newer versions require Dolt which needs CGO)
           curl -sL https://github.com/steveyegge/beads/releases/download/v0.50.3/beads_0.50.3_linux_amd64.tar.gz -o /tmp/beads.tar.gz
           tar -xzf /tmp/beads.tar.gz -C /tmp
-          chmod +x /tmp/beads_0.50.3_linux_amd64/beads
+          ls -la /tmp/
           mkdir -p "$HOME/.local/bin"
-          mv /tmp/beads_0.50.3_linux_amd64/beads "$HOME/.local/bin/bd"
+          mv /tmp/beads_0.50.3_linux_amd64/* "$HOME/.local/bin/" 2>/dev/null || mv /tmp/beads_0.50.3_linux_amd64/beads "$HOME/.local/bin/bd"
           rm -rf /tmp/beads*
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           bd version
