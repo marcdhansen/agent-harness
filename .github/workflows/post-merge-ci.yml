@@ -43,15 +43,21 @@ jobs:
       - name: Sync Beads
         id: sync
         run: |
-          # CI uses JSONL-only mode since beads-metadata branch only has JSONL files
+          # CI needs to initialize beads database from JSONL
           export PATH="$HOME/.local/bin:$PATH"
           git fetch origin beads-metadata || true
           
-          # Ensure no-db mode is set for CI (beads-metadata only has JSONL)
-          echo "no-db: true" > .beads/config.yaml
+          # Reset config to use SQLite (not no-db mode - that's deprecated)
+          echo "no-db: false" > .beads/config.yaml
+          
+          # Initialize database from JSONL if needed
+          if [ -f ".beads/issues.jsonl" ]; then
+            echo "Initializing beads database from JSONL..."
+            bd init || echo "::warning::bd init failed"
+          fi
           
           if bd sync; then
-            echo "Beads sync successful (JSONL mode)"
+            echo "Beads sync successful"
           else
             echo "::warning::Beads sync failed"
           fi
