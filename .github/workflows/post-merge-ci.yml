@@ -43,10 +43,16 @@ jobs:
       - name: Sync Beads
         id: sync
         run: |
-          # Config uses SQLite backend (no-db: false)
+          # CI uses JSONL-only mode since beads-metadata branch only has JSONL files
           export PATH="$HOME/.local/bin:$PATH"
           git fetch origin beads-metadata || true
-          bd sync || { echo "::warning::Beads sync failed - will attempt close anyway"; }
+          
+          # Use --no-db mode in CI as beads-metadata only has JSONL
+          if bd --no-db sync; then
+            echo "Beads sync successful (JSONL mode)"
+          else
+            echo "::warning::Beads sync failed"
+          fi
         continue-on-error: true
 
       - name: Run Safety Net Tests
