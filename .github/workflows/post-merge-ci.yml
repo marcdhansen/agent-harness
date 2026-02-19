@@ -31,20 +31,13 @@ jobs:
 
       - name: Install Beads
         run: |
-          # Download v0.50.3 directly (newer versions require Dolt which needs CGO)
-          # Note: tar extracts to /tmp directly, not a subdirectory
-          curl -sL https://github.com/steveyegge/beads/releases/download/v0.50.3/beads_0.50.3_linux_amd64.tar.gz -o /tmp/beads.tar.gz
-          tar -xzf /tmp/beads.tar.gz -C /tmp
-          mkdir -p "$HOME/.local/bin"
-          # The extracted binary is at /tmp/bd (not in a subdirectory)
-          if [ -f "/tmp/bd" ]; then
-            mv /tmp/bd "$HOME/.local/bin/bd"
-          elif [ -f "/tmp/beads_0.50.3_linux_amd64/bd" ]; then
-            mv /tmp/beads_0.50.3_linux_amd64/bd "$HOME/.local/bin/bd"
-          fi
-          chmod +x "$HOME/.local/bin/bd"
-          rm -rf /tmp/beads* /tmp/CHANGELOG.md /tmp/LICENSE /tmp/README.md
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # Use official install script for reliability
+          curl -sSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+          
+          # Ensure both possible install locations are in PATH
+          export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+          
+          # Verify installation
           bd version
 
       - name: Sync Beads
