@@ -31,7 +31,8 @@ jobs:
 
       - name: Install Beads
         run: |
-          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+          # Pin to v0.50.3 which supports JSONL-only mode (v0.52.0 requires Dolt with CGO)
+          curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/v0.50.3/scripts/install.sh | bash
           # Ensure bd is in path
           if [ -f "/usr/local/bin/bd" ]; then
             echo "/usr/local/bin" >> $GITHUB_PATH
@@ -43,21 +44,13 @@ jobs:
       - name: Sync Beads
         id: sync
         run: |
-          # CI needs to initialize beads database from JSONL
+          # CI uses JSONL-only mode (beads v0.50.3)
           export PATH="$HOME/.local/bin:$PATH"
           git fetch origin beads-metadata || true
           
-          # Reset config to use SQLite (not no-db mode - that's deprecated)
-          echo "no-db: false" > .beads/config.yaml
-          
-          # Initialize database from JSONL if needed
-          if [ -f ".beads/issues.jsonl" ]; then
-            echo "Initializing beads database from JSONL..."
-            bd init || echo "::warning::bd init failed"
-          fi
-          
-          if bd sync; then
-            echo "Beads sync successful"
+          # Use --no-db mode since beads-metadata only has JSONL files
+          if bd --no-db sync; then
+            echo "Beads sync successful (JSONL mode)"
           else
             echo "::warning::Beads sync failed"
           fi
