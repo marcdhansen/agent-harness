@@ -22,6 +22,9 @@ Define proposed changes, blast radius, and success criteria.
 - [ ] **Update ImplementationPlan.md with proposed changes** (Validator: `check_planning_docs`)
 - [ ] **Perform blast radius analysis** (Validator: `check_planning_docs`)
 - [ ] **Get explicit user approval before EXECUTION** (Validator: `check_plan_approval`)
+- [ ] **Include API design documentation if feature involves API changes** (Validator: `check_api_documentation`)
+- [ ] **Create beads issue(s) after approval (BLOCKER before execution)** - Use `bd create` with plan reference in description
+- [ ] **Store plan in .agent/plans/{issue-id}.md with bi-directional links** (Validator: `check_plan_storage`)
 
 ### Phase 4: Execution — MANDATORY
 
@@ -29,8 +32,10 @@ Active work phase - executing the task.
 
 - [ ] **Verify on a feature branch** (Validator: `check_branch_info`)
 - [ ] **Verify task.md exists in brain directory** (Validator: `check_workspace_integrity`)
-- [ ] **Verify active Beads issue (MANDATORY for Execution)** (Validator: `check_beads_issue`)
+- [ ] **Verify active Beads issue exists** (Validator: `check_beads_issue`)
 - [ ] **Verify plan approval (MANDATORY for Execution)** (Validator: `check_plan_approval`)
+- [ ] **Verify beads issue created after plan approval** (BLOCKER: Must create issue(s) after approval before execution)
+- [ ] **Verify plan stored in .agent/plans/{issue-id}.md** (Validator: `check_plan_storage`)
 - [ ] **Verify TDD compliance** (Validator: `validate_tdd_compliance`)
 
 ### Phase 5: Finalization — MANDATORY
@@ -41,7 +46,8 @@ Quality gates, atomic commits, TDD validation, and PR creation.
 - [ ] **Validate atomic commit requirements and conventional format** (Validator: `validate_atomic_commits`)
 - [ ] **Validate TDD compliance (implementation accompanied by tests)** (Validator: `validate_tdd_compliance`)
 - [ ] **Verify structured reflection was captured (.reflection_input.json)** (Validator: `check_reflection_invoked`)
-- [ ] **Verify hand-off documentation for multi-phase tasks** (Validator: `check_handoff_compliance`)
+- [ ] **Verify hand-off documentation exists (.agent/handoffs/{issue-id}.md)** (Validator: `check_handoff_completed`)
+- [ ] **Verify handoff file will be cleaned up on issue close** - Handoff files in `.agent/handoffs/` are automatically deleted when the associated beads issue is closed after PR merge
 - [ ] **Verify no orphaned or multiple open PRs for the task** (Validator: `check_handoff_pr_verification`)
 - [ ] **Verify PR references the active Beads issue** (Validator: `check_beads_pr_sync`)
 - [ ] **Verify the workspace is clean of temporary artifacts** (Validator: `check_workspace_cleanup`)

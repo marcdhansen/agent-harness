@@ -37,6 +37,18 @@
                     ]
                 },
                 {
+                    "id": "beads_issue_created_after_approval",
+                    "description": "Verify beads issue created after plan approval (BLOCKER)",
+                    "type": "BLOCKER",
+                    "validator": "check_beads_issue_created"
+                },
+                {
+                    "id": "plan_stored_with_issue_id",
+                    "description": "Verify plan stored in .agent/plans/{issue-id}.md",
+                    "type": "BLOCKER",
+                    "validator": "check_plan_storage"
+                },
+                {
                     "id": "tdd_compliance_check",
                     "description": "Verify TDD compliance",
                     "type": "BLOCKER",

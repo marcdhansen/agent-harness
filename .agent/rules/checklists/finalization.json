@@ -32,9 +32,15 @@
                 },
                 {
                     "id": "handoff_compliance",
-                    "description": "Verify hand-off documentation for multi-phase tasks",
+                    "description": "Verify hand-off documentation exists (.agent/handoffs/{issue-id}.md)",
                     "type": "BLOCKER",
                     "validator": "check_handoff_compliance"
+                },
+                {
+                    "id": "handoff_cleanup",
+                    "description": "Verify handoff file cleanup - files in .agent/handoffs/ will be deleted when issue is closed after PR merge",
+                    "type": "WARNING",
+                    "validator": "check_handoff_cleanup_info"
                 },
                 {
                     "id": "handoff_pr_verification",

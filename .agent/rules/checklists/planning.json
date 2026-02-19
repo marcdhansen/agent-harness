@@ -29,6 +29,24 @@
                     "description": "Get explicit user approval before EXECUTION",
                     "type": "BLOCKER",
                     "validator": "check_plan_approval"
+                },
+                {
+                    "id": "api_documentation",
+                    "description": "Include API design documentation if feature involves API changes",
+                    "type": "WARNING",
+                    "validator": "check_api_documentation"
+                },
+                {
+                    "id": "beads_issue_created",
+                    "description": "Create beads issue(s) after approval (BLOCKER before execution)",
+                    "type": "BLOCKER",
+                    "validator": "check_beads_issue_created"
+                },
+                {
+                    "id": "plan_storage_with_issue_id",
+                    "description": "Store plan in .agent/plans/{issue-id}.md with bi-directional links",
+                    "type": "BLOCKER",
+                    "validator": "check_plan_storage"
                 }
             ]
         }
